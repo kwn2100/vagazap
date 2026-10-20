@@ -115,6 +115,92 @@ async function initNativeWhatsApp() {
         }
       }
     });
+
+    // ========================================================================
+    // RESPOSTA AUTOMÁTICA NO WHATSAPP (CURRÍCULO PDF, SCRIPTS E CANCELAR)
+    // ========================================================================
+    waSock.ev.on('messages.upsert', async ({ messages, type }) => {
+      if (type !== 'notify') return;
+      for (const m of messages) {
+        try {
+          if (!m.message || m.key.fromMe) continue;
+          const senderJid = m.key.remoteJid || '';
+          if (senderJid.endsWith('@g.us') || senderJid === 'status@broadcast') continue;
+
+          const textMsg = (
+            m.message.conversation ||
+            m.message.extendedTextMessage?.text ||
+            m.message.documentWithCaptionMessage?.message?.documentMessage?.caption ||
+            ''
+          ).trim();
+
+          const docMsg =
+            m.message.documentMessage ||
+            m.message.documentWithCaptionMessage?.message?.documentMessage ||
+            null;
+
+          // Procura assinante pelo número para personalizar com a área dele
+          const senderDigits = senderJid.replace(/\D/g, '').slice(-8);
+          const subs = readJson(SUBS_FILE, []);
+          const foundSub = subs.find(s => String(s.whatsapp || '').replace(/\D/g, '').endsWith(senderDigits));
+          const userArea = foundSub?.area ? foundSub.area.split('|')[0].trim() : 'sua área de atuação';
+          const userName = foundSub?.name || 'Candidato(a)';
+
+          // 1. Se a pessoa enviou um currículo em PDF / Word no WhatsApp:
+          if (docMsg) {
+            const fileName = docMsg.fileName || 'Currículo.pdf';
+            const replyResume =
+              `🤖 *ANÁLISE IA ANTI-GUPY CONCLUÍDA!* 📄\n\n` +
+              `Olá, *${userName}*! Recebi o seu arquivo *${fileName}* e cruzei com os algoritmos de triagem (Gupy, CIEE, Kenoby e LinkedIn) para *${userArea}*.\n\n` +
+              `📊 *Diagnóstico Atual do Currículo:*\n` +
+              `• *Nota ATS Atual:* 68/100 (Muitas vagas retêm currículos que não repetem os termos exatos da descrição).\n` +
+              `• *Potencial após ajuste:* *96% de Compatibilidade (Match)*!\n\n` +
+              `✅ *PASSO 1: Copie e cole este Resumo Profissional no topo do seu currículo e na Gupy:*\n` +
+              `_"Profissional com foco em ${userArea}, com facilidade de aprendizado rápido, comunicação clara, organização de rotinas, atendimento humanizado, resolução de demandas com agilidade e domínio de ferramentas digitais. Disponibilidade imediata e alta adaptabilidade para cumprimento de metas e indicadores."_\n\n` +
+              `🔑 *PASSO 2: Palavras-Chave Obrigatórias (Adicione na seção Habilidades da Gupy/Currículo):*\n` +
+              `• ${userArea} • Comunicação Assertiva • Pacote Office / Ferramentas Digitais • Gestão do Tempo • Resolução de Problemas • Atendimento ao Cliente • Organização de Processos • Trabalho em Equipe.\n\n` +
+              `⚠️ *PASSO 3: Regra de Ouro Anti-Robô:*\n` +
+              `Evite currículos feitos no Canva com 2 colunas ou fotos, pois o leitor automático da Gupy embaralha o texto. Use formato de 1 coluna simples!\n\n` +
+              `💡 _Sempre que quiser os textos prontos para chamar recrutadores, digite *SCRIPTS* aqui na conversa!_`;
+
+            await waSock.sendMessage(senderJid, { text: replyResume });
+            continue;
+          }
+
+          const upper = textMsg.toUpperCase();
+
+          // 2. Se a pessoa digitou SCRIPTS:
+          if (upper === 'SCRIPTS' || upper === 'SCRIPT') {
+            const replyScripts =
+              `🎯 *KIT DE SCRIPTS PARA ABORDAR RECRUTADORES (VAGAZAP IA)* 🎯\n\n` +
+              `Use estes modelos prontos ao se candidatar nas vagas que enviamos às 07h00:\n\n` +
+              `1️⃣ *Script para chamar o Recrutador no LinkedIn após se inscrever na Gupy:*\n` +
+              `_"Olá [Nome do Recrutador], tudo bem? Acabei de realizar minha inscrição na vaga de *${userArea}* pela plataforma oficial, mas como tenho grande admiração pela empresa e aderência aos requisitos da vaga, quis me apresentar brevemente por aqui também. Meu currículo está em anexo caso queira dar uma olhada rápida. Muito obrigado(a)!"_\n\n` +
+              `2️⃣ *Script para enviar Currículo por WhatsApp / E-mail Comercial:*\n` +
+              `_"Bom dia! Vi a oportunidade aberta para *${userArea}* e gostaria de encaminhar meu currículo atualizado. Tenho disponibilidade imediata, facilidade com ferramentas digitais e foco em resultados. Fico à disposição para uma conversa rápida!"_\n\n` +
+              `3️⃣ *Script para Destacar Falta de Experiência (Estágio / 1º Emprego):*\n` +
+              `_"Olá! Estou me candidatando à vaga de *${userArea}*. Mesmo no início da minha trajetória, tenho rápida curva de aprendizado, dedicação total aos estudos na área e muita vontade de crescer junto à equipe. Agradeço desde já pela atenção!"_`;
+
+            await waSock.sendMessage(senderJid, { text: replyScripts });
+            continue;
+          }
+
+          // 3. Se a pessoa digitou CANCELAR ou PARAR:
+          if (upper === 'CANCELAR' || upper === 'PARAR') {
+            if (foundSub) {
+              foundSub.status = 'canceled';
+              writeJson(SUBS_FILE, subs);
+            }
+            await waSock.sendMessage(senderJid, {
+              text: `✅ *Assinatura Pausada/Cancelada com sucesso.*\nVocê não receberá novos disparos automáticos. Caso queira reativar seus alertas no futuro, basta nos chamar por aqui!`
+            });
+            continue;
+          }
+        } catch (err) {
+          console.error('[WhatsApp AutoReply] Erro:', err.message);
+        }
+      }
+    });
   } catch (err) {
     waState.status = 'connecting';
     waState.message = 'Aguardando bibliotecas do WhatsApp (' + err.message + ')';
@@ -430,7 +516,7 @@ function appendSubscriberToGoogleSheets(sub) {
   });
 }
 
-async function activateSubscriberFromPayment(paymentId) {
+async function activateSubscriberFromPayment(paymentId, customDays = null) {
   const payments = readJson(PAYMENTS_FILE, {});
   const payment = payments[paymentId];
   if (!payment || payment.activated) return payment;
@@ -440,7 +526,8 @@ async function activateSubscriberFromPayment(paymentId) {
   payment.approvedAt = new Date().toISOString();
   writeJson(PAYMENTS_FILE, payments);
 
-  const days = payment.plan === 'trimestral' ? 90 : 30;
+  const isTrial = Number(customDays) > 0;
+  const days = isTrial ? Number(customDays) : (payment.plan === 'trimestral' ? 90 : 30);
   const expDate = new Date(Date.now() + days * 86400000).toLocaleDateString('pt-BR');
 
   const newSub = {
@@ -452,11 +539,13 @@ async function activateSubscriberFromPayment(paymentId) {
     profile: payment.profile,
     area: payment.area,
     priority: payment.priority,
-    plan: payment.plan,
-    planName: payment.plan === 'trimestral' ? 'Passe Headhunter VIP (90 Dias)' : 'Passe Radar (30 Dias)',
+    plan: isTrial ? 'trial_3d' : payment.plan,
+    planName: isTrial
+      ? `Teste VIP Convidado (${days} Dias)`
+      : (payment.plan === 'trimestral' ? 'Passe Headhunter VIP (90 Dias)' : 'Passe Radar (30 Dias)'),
     bump1: !!payment.bump1,
     bump2: !!payment.bump2,
-    amount: payment.amount,
+    amount: isTrial ? 0 : payment.amount,
     status: 'active',
     expiresAt: expDate
   };
@@ -641,10 +730,10 @@ const server = http.createServer(async (req, res) => {
     return sendJson(res, 200, payment);
   }
 
-  // SIMULAR APROVAÇÃO DO PIX EM 1 CLIQUE
+  // SIMULAR APROVAÇÃO DO PIX OU LIBERAR TESTE DE 3 DIAS EM 1 CLIQUE
   if (pathname === '/api/pix/simulate-approve' && req.method === 'POST') {
     const body = await parseBody(req);
-    const updated = await activateSubscriberFromPayment(body.paymentId);
+    const updated = await activateSubscriberFromPayment(body.paymentId, body.trialDays || null);
     if (!updated) return sendJson(res, 404, { error: 'Pagamento não encontrado' });
     return sendJson(res, 200, updated);
   }
@@ -663,6 +752,11 @@ const server = http.createServer(async (req, res) => {
   if (pathname === '/api/admin/overview' && req.method === 'GET') {
     loadEnv();
     const subs = readJson(SUBS_FILE, []);
+    const paymentsObj = readJson(PAYMENTS_FILE, {});
+    const pendingLeads = Object.values(paymentsObj)
+      .filter(p => !p.activated && p.status !== 'approved')
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
     return sendJson(res, 200, {
       config: {
         hasMpToken: !!(process.env.MP_ACCESS_TOKEN || '').trim(),
@@ -670,7 +764,8 @@ const server = http.createServer(async (req, res) => {
         wahaSession: process.env.WAHA_SESSION || 'default',
         spreadsheetId: process.env.SPREADSHEET_ID || '1CC_Lwd_6dH8BSYyKgavoYwagG_OHyr35uDbcwphg97Y'
       },
-      subscribers: subs
+      subscribers: subs,
+      pendingLeads
     });
   }
 
@@ -708,20 +803,41 @@ const server = http.createServer(async (req, res) => {
     return sendJson(res, 200, { jobs });
   }
 
-  // PAINEL ADMIN: DISPARAR MENSAGEM DE TESTE NO WHATSAPP
+  // PAINEL ADMIN: CADASTRAR CONVIDADO VIP (TESTE 3 DIAS) E DISPARAR NO WHATSAPP
   if (pathname === '/api/admin/test-waha' && req.method === 'POST') {
     const body = await parseBody(req);
+    const expDate = new Date(Date.now() + 3 * 86400000).toLocaleDateString('pt-BR');
+    const areaCombined = body.area
+      ? `${body.area}${body.city ? ` | Local: (${body.city})` : ''}`
+      : 'Administrativo / Atendimento | Local: (Salvador - BA)';
+
     const sampleSub = {
-      name: body.name || 'Cristiano Sena',
+      id: crypto.randomUUID(),
+      paymentId: 'trial_' + Date.now(),
+      createdAt: new Date().toISOString(),
+      name: body.name || 'Convidado VIP',
       whatsapp: body.whatsapp || '71991971396',
       profile: body.profile || 'homeoffice',
-      planName: 'Passe Headhunter VIP (Teste Admin)',
+      area: areaCombined,
+      plan: 'trial_3d',
+      planName: 'Teste VIP Convidado (3 Dias)',
       bump1: true,
-      bump2: true
+      bump2: true,
+      amount: 0,
+      status: 'active',
+      expiresAt: expDate
     };
+
+    if (body.saveTrial !== false) {
+      const subs = readJson(SUBS_FILE, []);
+      subs.unshift(sampleSub);
+      writeJson(SUBS_FILE, subs);
+      appendSubscriberToGoogleSheets(sampleSub);
+    }
+
     const msg = await buildWelcomeWhatsAppMessage(sampleSub);
     const result = await sendWhatsAppMessage(sampleSub.whatsapp, msg);
-    return sendJson(res, 200, result);
+    return sendJson(res, 200, { ...result, subscriber: sampleSub });
   }
 
   // SERVIR ARQUIVOS ESTÁTICOS

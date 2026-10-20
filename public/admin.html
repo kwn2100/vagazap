@@ -71,30 +71,42 @@
       <!-- Card 2: Testar Disparo Agora + Configurar Mercado Pago -->
       <div class="space-y-6">
 
-        <!-- Teste de Disparo -->
+        <!-- Teste de Disparo / Cadastrar Convidado 3 Dias -->
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
-          <h2 class="text-base font-extrabold text-white">🚀 2. Testar Disparo de Vagas no WhatsApp</h2>
+          <h2 class="text-base font-extrabold text-white">🎁 2. Cadastrar Teste de 3 Dias (Convidado VIP)</h2>
           <p class="text-xs text-slate-400">
-            Assim que o status ao lado estiver <strong>Conectado</strong>, clique abaixo para enviar o boletim de vagas real para o seu número:
+            Cadastre seus 3 convidados abaixo para liberar <strong>3 dias de acesso grátis</strong> (salva na planilha com vencimento em 3 dias e já dispara as vagas da área/cidade deles no WhatsApp):
           </p>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-bold text-slate-300 mb-1">WhatsApp Destino (DDD+Número):</label>
+              <label class="block text-xs font-bold text-slate-300 mb-1">Nome do Convidado:</label>
+              <input id="test-name" type="text" placeholder="Ex: Maria Silva" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">WhatsApp (DDD+Número):</label>
               <input id="test-phone" type="text" value="71991971396" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white" />
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-300 mb-1">Perfil de Vagas:</label>
+              <label class="block text-xs font-bold text-slate-300 mb-1">Modalidade:</label>
               <select id="test-profile" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white">
-                <option value="homeoffice">🏠 100% Home Office</option>
-                <option value="estagio">🎓 Estágio Universitário</option>
+                <option value="homeoffice">💼 Vagas CLT / PJ</option>
+                <option value="estagio">🎓 Estágio Universitário/Técnico</option>
                 <option value="aprendiz">🚀 Jovem Aprendiz</option>
               </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">Curso ou Cargo:</label>
+              <input id="test-area" type="text" placeholder="Ex: Psicologia, Administração..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white" />
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-xs font-bold text-slate-300 mb-1">Cidade / Estado (ou deixe vazio para Home Office):</label>
+              <input id="test-city" type="text" placeholder="Ex: Salvador - BA" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white" />
             </div>
           </div>
 
           <button onclick="testDispatch()" class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs cursor-pointer transition">
-            📲 Enviar Boletim de Teste no WhatsApp Agora
+            🎁 Ativar Teste de 3 Dias + Enviar Vagas no WhatsApp Agora
           </button>
 
           <pre id="test-output" class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-emerald-400 overflow-x-auto hidden"></pre>
@@ -121,10 +133,13 @@
       </div>
     </div>
 
-    <!-- Lista de Assinantes -->
+    <!-- Lista de Pessoas que Preencheram o Quiz (Para Liberar Teste de 3 Dias em 1 Clique) -->
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
       <div class="flex items-center justify-between mb-4">
-        <h2 class="text-base font-extrabold text-white">👥 Assinantes Ativos (Sincronizados com a aba 'Assinantes' no Google Sheets)</h2>
+        <div>
+          <h2 class="text-base font-extrabold text-white">⏳ Pessoas que Preencheram o Quiz no Site (Aguardando PIX / Liberar Teste)</h2>
+          <p class="text-xs text-slate-400">Se você mandou o site para seus 3 convidados responderem o Quiz, basta clicar em <strong>Liberar 3 Dias Grátis</strong> ao lado do nome deles:</p>
+        </div>
         <button onclick="loadOverview()" class="text-xs text-emerald-400 hover:underline cursor-pointer">↻ Atualizar</button>
       </div>
 
@@ -135,7 +150,31 @@
               <th class="py-2 pr-3">Data</th>
               <th class="py-2 pr-3">Nome</th>
               <th class="py-2 pr-3">WhatsApp</th>
-              <th class="py-2 pr-3">Perfil</th>
+              <th class="py-2 pr-3">Modalidade</th>
+              <th class="py-2 pr-3">Área & Cidade Escolhida</th>
+              <th class="py-2 text-right">Ação</th>
+            </tr>
+          </thead>
+          <tbody id="pending-tbody" class="divide-y divide-slate-800"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Lista de Assinantes -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-extrabold text-white">👥 Assinantes e Testadores Ativos (Sincronizados com a aba 'Assinantes' no Google Sheets)</h2>
+        <button onclick="loadOverview()" class="text-xs text-emerald-400 hover:underline cursor-pointer">↻ Atualizar</button>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="border-b border-slate-800 text-slate-400">
+              <th class="py-2 pr-3">Data</th>
+              <th class="py-2 pr-3">Nome</th>
+              <th class="py-2 pr-3">WhatsApp</th>
+              <th class="py-2 pr-3">Área & Cidade</th>
               <th class="py-2 pr-3">Plano</th>
               <th class="py-2 pr-3">Valor Pago</th>
               <th class="py-2">Vencimento</th>
@@ -186,9 +225,32 @@
     async function loadOverview() {
       const resp = await fetch('/api/admin/overview');
       const data = await resp.json();
+
+      // Pendentes do Quiz
+      const pendingTbody = document.getElementById('pending-tbody');
+      if (!data.pendingLeads || data.pendingLeads.length === 0) {
+        pendingTbody.innerHTML = '<tr><td colspan="6" class="py-4 text-center text-slate-500">Ninguém aguardando liberação no momento.</td></tr>';
+      } else {
+        pendingTbody.innerHTML = data.pendingLeads.map(p => `
+          <tr>
+            <td class="py-2.5 pr-3 text-slate-400">${new Date(p.createdAt).toLocaleDateString('pt-BR')}</td>
+            <td class="py-2.5 pr-3 font-bold text-white">${p.name}</td>
+            <td class="py-2.5 pr-3 text-emerald-400">${p.whatsapp}</td>
+            <td class="py-2.5 pr-3 uppercase">${p.profile}</td>
+            <td class="py-2.5 pr-3 text-slate-300">${p.area || 'Geral'}</td>
+            <td class="py-2.5 text-right">
+              <button onclick="approveTrialLead('${p.id}')" class="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs cursor-pointer transition">
+                🎁 Liberar 3 Dias Grátis + Disparar WhatsApp
+              </button>
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      // Assinantes e Testadores Ativos
       const tbody = document.getElementById('subs-tbody');
       if (!data.subscribers || data.subscribers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="py-4 text-center text-slate-500">Nenhum assinante ainda. Faça um teste no funil principal!</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="py-4 text-center text-slate-500">Nenhum assinante ou testador ativo ainda.</td></tr>';
         return;
       }
       tbody.innerHTML = data.subscribers.map(s => `
@@ -196,12 +258,22 @@
           <td class="py-2.5 pr-3 text-slate-400">${new Date(s.createdAt).toLocaleDateString('pt-BR')}</td>
           <td class="py-2.5 pr-3 font-bold text-white">${s.name}</td>
           <td class="py-2.5 pr-3 text-emerald-400">${s.whatsapp}</td>
-          <td class="py-2.5 pr-3 uppercase">${s.profile}</td>
+          <td class="py-2.5 pr-3 text-slate-300">${s.area || s.profile}</td>
           <td class="py-2.5 pr-3">${s.planName}</td>
           <td class="py-2.5 pr-3 font-bold text-emerald-400">R$ ${Number(s.amount).toFixed(2).replace('.', ',')}</td>
-          <td class="py-2.5 text-slate-400">${s.expiresAt}</td>
+          <td class="py-2.5 text-slate-400 font-semibold">${s.expiresAt}</td>
         </tr>
       `).join('');
+    }
+
+    async function approveTrialLead(paymentId) {
+      await fetch('/api/pix/simulate-approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentId, trialDays: 3 })
+      });
+      alert('Teste de 3 dias liberado e vagas enviadas no WhatsApp do convidado!');
+      loadOverview();
     }
 
     async function saveMpToken() {
@@ -219,18 +291,22 @@
     async function testDispatch() {
       const out = document.getElementById('test-output');
       out.classList.remove('hidden');
-      out.textContent = 'Enviando mensagem pelo WhatsApp...';
+      out.textContent = 'Ativando Teste de 3 Dias, buscando vagas ao vivo e disparando no WhatsApp...';
 
       const resp = await fetch('/api/admin/test-waha', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          name: document.getElementById('test-name').value || 'Convidado VIP',
           whatsapp: document.getElementById('test-phone').value,
-          profile: document.getElementById('test-profile').value
+          profile: document.getElementById('test-profile').value,
+          area: document.getElementById('test-area').value || 'Administrativo',
+          city: document.getElementById('test-city').value || ''
         })
       });
       const data = await resp.json();
       out.textContent = JSON.stringify(data, null, 2);
+      loadOverview();
     }
 
     checkWaStatus();
