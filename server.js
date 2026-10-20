@@ -750,4 +750,10 @@ server.listen(PORT, () => {
   console.log(`📱 Painel Admin (WhatsApp QR + MP): http://localhost:${PORT}/admin`);
   console.log(`====================================================`);
   initNativeWhatsApp();
+
+  // Keep-Alive automático a cada 10 minutos para manter o plano Free do Render acordado 24h
+  const renderUrl = process.env.RENDER_EXTERNAL_URL || 'https://vagazap.onrender.com';
+  setInterval(() => {
+    fetch(`${renderUrl}/api/whatsapp/status`).catch(() => {});
+  }, 10 * 60 * 1000);
 });
