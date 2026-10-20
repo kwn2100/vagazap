@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VagaZap IA — Receba Vagas Filtradas no seu WhatsApp</title>
+  <link rel="icon" href="/logo.jpg" />
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased min-h-screen">
+
+  <!-- Topo da Marca VagaZap com a Logo Oficial -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-30">
+    <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <img src="/logo.jpg" alt="VagaZap IA" class="w-10 h-10 rounded-full border border-emerald-500/40 object-cover shadow" />
+        <div>
+          <span class="font-extrabold text-lg tracking-tight text-white">Vaga<span class="text-emerald-400">Zap</span></span>
+          <span class="ml-1.5 text-xs px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-bold">IA</span>
+        </div>
+      </div>
+      <a href="/admin" class="text-xs font-semibold text-slate-400 hover:text-emerald-400 transition">
+        ⚙️ Painel Admin
+      </a>
+    </div>
+  </header>
+
+  <main class="max-w-2xl mx-auto px-4 py-8">
+
+    <!-- PASSO 0: HERO -->
+    <div id="step-hero" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl text-center">
+      <img src="/logo.jpg" alt="VagaZap IA" class="w-20 h-20 rounded-full mx-auto mb-4 border-2 border-emerald-500/50 shadow-lg shadow-emerald-500/10" />
+
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold mb-4">
+        <span>🤖 Varredura Automática em 9 Portais • Disparo Diário às 07h00</span>
+      </div>
+
+      <h1 class="text-2xl md:text-4xl font-extrabold text-white leading-tight mb-4">
+        Pare de perder 2 horas por dia abrindo 10 sites de emprego diferentes.
+      </h1>
+
+      <p class="text-sm md:text-base text-slate-400 mb-6 max-w-xl mx-auto">
+        O <strong>VagaZap IA</strong> varre toda manhã a <strong>Gupy, CIEE, Nube, Espro, Remotar, InfoJobs, Catho e LinkedIn</strong>, elimina vagas falsas e entrega no seu <strong>WhatsApp</strong> apenas as vagas compatíveis com você.
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-left mb-7">
+        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
+          <div class="text-xs font-bold text-emerald-400 mb-1">⏱️ Economize 30h/mês</div>
+          <p class="text-xs text-slate-400">Chega de abrir 20 abas à noite depois de chegar cansado do trabalho ou faculdade.</p>
+        </div>
+        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
+          <div class="text-xs font-bold text-emerald-400 mb-1">🎯 Filtro Sob Medida</div>
+          <p class="text-xs text-slate-400">Home Office, Estágio ou Jovem Aprendiz separados para a sua área e cidade.</p>
+        </div>
+        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
+          <div class="text-xs font-bold text-emerald-400 mb-1">🥇 Chegue às 07h00</div>
+          <p class="text-xs text-slate-400">Receba no WhatsApp logo cedo e envie seu currículo antes de 2.000 concorrentes.</p>
+        </div>
+      </div>
+
+      <button onclick="startQuiz()" class="w-full md:w-auto px-8 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-base shadow-lg shadow-emerald-500/20 transition cursor-pointer">
+        Personalizar Meu Filtro de Vagas (Grátis) →
+      </button>
+
+      <p class="text-xs text-slate-500 mt-3">
+        🔓 Inclui <strong>1 vaga oficial desbloqueada na hora</strong> para você testar gratuitamente.
+      </p>
+    </div>
+
+    <!-- PASSOS DO QUIZ (1 A 5) -->
+    <div id="step-questions" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl">
+      <div class="mb-6">
+        <div class="flex justify-between items-center text-xs text-slate-400 mb-2">
+          <span id="quiz-step-label" class="font-semibold">Pergunta 1 de 5</span>
+          <span id="quiz-progress-pct" class="font-bold text-emerald-400">20%</span>
+        </div>
+        <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+          <div id="quiz-progress-bar" class="h-full bg-emerald-500 transition-all duration-300" style="width: 20%"></div>
+        </div>
+      </div>
+
+      <h2 id="quiz-question-title" class="text-lg md:text-xl font-bold text-white mb-2"></h2>
+      <p id="quiz-question-subtitle" class="text-xs text-slate-400 mb-5"></p>
+
+      <!-- Container Dinâmico das Opções -->
+      <div id="quiz-options" class="space-y-3"></div>
+
+      <div class="mt-6 flex justify-between items-center pt-4 border-t border-slate-800">
+        <button onclick="prevQuestion()" class="text-xs font-semibold text-slate-400 hover:text-white cursor-pointer">
+          ← Voltar
+        </button>
+        <span class="text-xs text-slate-500">⚡ Configurador Inteligente VagaZap</span>
+      </div>
+    </div>
+
+    <!-- TELA DE CARREGAMENTO -->
+    <div id="step-loading" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl text-center">
+      <div class="w-14 h-14 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin mx-auto mb-4"></div>
+      <h3 class="text-lg font-bold text-white mb-2">Cruzando seu Perfil em 9 Portais...</h3>
+      <p id="loading-status-text" class="text-sm text-emerald-400 font-semibold mb-4">
+        Varrendo Gupy, CIEE, Nube, Espro, Remotar, InfoJobs e LinkedIn...
+      </p>
+      <p id="loading-sub-summary" class="text-xs text-slate-400"></p>
+    </div>
+
+    <!-- TELA FINAL: AMOSTRA GRÁTIS + CHECKOUT PIX -->
+    <div id="step-results" class="hidden space-y-5">
+
+      <!-- Resumo Personalizado do Questionário -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <span id="result-profile-badge" class="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 text-xs font-bold"></span>
+          <span id="result-location-badge" class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 text-xs font-semibold"></span>
+        </div>
+        <h3 class="text-xl font-extrabold text-white">
+          Encontramos <span class="text-emerald-400">9 vagas abertas hoje</span> para o seu filtro!
+        </h3>
+        <p id="result-areas-summary" class="text-xs text-slate-400 mt-1"></p>
+      </div>
+
+      <!-- VAGA #1 LIBERADA GRATUITAMENTE -->
+      <div class="bg-slate-900 border-2 border-emerald-500/70 rounded-2xl p-5 shadow-lg">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+          <span class="px-2.5 py-0.5 rounded-md bg-emerald-500 text-slate-950 text-xs font-extrabold">
+            🔓 VAGA #1 LIBERADA GRÁTIS (AMOSTRA REAL)
+          </span>
+          <span class="px-2.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 text-xs font-extrabold">
+            96% de Match
+          </span>
+        </div>
+
+        <h4 id="free-job-title" class="text-base font-bold text-white"></h4>
+        <p id="free-job-company" class="text-xs text-slate-400 mb-3"></p>
+
+        <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 mb-3 text-xs text-slate-300" id="free-job-benefits"></div>
+
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <span class="text-xs text-emerald-400 font-semibold">✓ Link direto verificado (Sem anúncios)</span>
+          <a id="free-job-link" href="#" target="_blank" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-extrabold transition">
+            Abrir Vaga Oficial ↗
+          </a>
+        </div>
+      </div>
+
+      <!-- FORMULÁRIO DE CHECKOUT PIX TRANSPARENTE -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <div class="text-center mb-5">
+          <span class="px-3 py-1 rounded-full bg-amber-500/15 text-amber-400 text-xs font-bold">
+            ⚡ RECEBA NO SEU WHATSAPP AGORA + TODO DIA ÀS 07H00
+          </span>
+          <h3 class="text-lg md:text-xl font-extrabold text-white mt-2">
+            Ative o VagaZap com o seu Filtro Personalizado
+          </h3>
+          <p class="text-xs text-slate-400 mt-1">
+            Suas respostas do questionário acima já estão salvas. Digite seu WhatsApp abaixo para liberar o envio diário:
+          </p>
+        </div>
+
+        <!-- Seleção de Plano -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+          <label onclick="selectPlan('mensal')" id="plan-card-mensal" class="cursor-pointer p-4 rounded-xl border-2 border-emerald-500 bg-emerald-500/5 transition">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs font-bold text-white">Passe Radar (30 Dias)</span>
+              <input type="radio" name="plan" checked class="accent-emerald-500" />
+            </div>
+            <div class="text-2xl font-extrabold text-emerald-400">R$ 19,90</div>
+            <p class="text-xs text-slate-400 mt-1">5 vagas filtradas por manhã no WhatsApp + % Match + Benefícios</p>
+          </label>
+
+          <label onclick="selectPlan('trimestral')" id="plan-card-trimestral" class="cursor-pointer p-4 rounded-xl border border-slate-800 bg-slate-950 transition">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs font-bold text-white">Passe Headhunter VIP (90 Dias)</span>
+              <input type="radio" name="plan" class="accent-emerald-500" />
+            </div>
+            <div class="text-2xl font-extrabold text-white">R$ 49,90 <span class="text-xs font-normal text-emerald-400">(-25%)</span></div>
+            <p class="text-xs text-slate-400 mt-1">90 dias de alertas às 07h + Mensagem pronta p/ enviar ao recrutador</p>
+          </label>
+        </div>
+
+        <!-- Dados do Assinante -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">Seu Primeiro Nome:</label>
+            <input id="client-name" type="text" placeholder="Ex: Cristiano" value="Cristiano" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-emerald-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">📱 Seu WhatsApp com DDD:</label>
+            <input id="client-whatsapp" type="text" placeholder="Ex: (71) 99197-1396" value="(71) 99197-1396" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-emerald-500" />
+          </div>
+        </div>
+
+        <!-- Order Bumps -->
+        <div class="space-y-2.5 mb-5">
+          <div class="text-xs font-bold text-slate-300">🔥 Adicione com desconto único de checkout:</div>
+
+          <label class="flex items-start gap-3 p-3.5 rounded-xl border border-amber-500/40 bg-amber-500/5 cursor-pointer">
+            <input type="checkbox" id="bump-1" onchange="updateTotal()" class="mt-1 accent-emerald-500 w-4 h-4" />
+            <div class="text-xs">
+              <div class="font-bold text-white">+ R$ 14,90 — Otimizador de Currículo Anti-Robô da Gupy (ATS)</div>
+              <p class="text-slate-400 mt-0.5">Envie seu currículo no nosso WhatsApp (mesmo sem experiência) e a IA reescreve para passar de 90% na Gupy e CIEE.</p>
+            </div>
+          </label>
+
+          <label class="flex items-start gap-3 p-3.5 rounded-xl border border-slate-800 bg-slate-950 cursor-pointer">
+            <input type="checkbox" id="bump-2" onchange="updateTotal()" class="mt-1 accent-emerald-500 w-4 h-4" />
+            <div class="text-xs">
+              <div class="font-bold text-white">+ R$ 9,90 — Kit 15 Scripts para Abordar Recrutadores + Guia de Entrevista</div>
+              <p class="text-slate-400 mt-0.5">Modelos prontos de mensagens para chamar a atenção de quem contrata no LinkedIn e WhatsApp.</p>
+            </div>
+          </label>
+        </div>
+
+        <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between mb-4">
+          <span class="text-xs font-bold text-slate-400">Valor Total no PIX:</span>
+          <span id="checkout-total" class="text-2xl font-extrabold text-emerald-400">R$ 19,90</span>
+        </div>
+
+        <button id="btn-generate-pix" onclick="createPixPayment()" class="w-full py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-base shadow-lg shadow-emerald-500/20 transition cursor-pointer">
+          Gerar PIX Instantâneo e Receber no WhatsApp →
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- MODAL DE PAGAMENTO PIX TRANSPARENTE -->
+  <div id="pix-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full text-center space-y-4 shadow-2xl">
+      <div id="pix-pending-content" class="space-y-4">
+        <span class="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 text-xs font-bold">
+          ⚡ PIX GERADO • LIBERAÇÃO AUTOMÁTICA NO WHATSAPP
+        </span>
+        <h4 class="text-lg font-extrabold text-white">Escaneie ou Copie o Código PIX</h4>
+        <p class="text-xs text-slate-400">
+          Assim que confirmar o pagamento de <strong id="pix-modal-amount" class="text-white"></strong>, enviaremos suas vagas filtradas para <strong id="pix-modal-phone" class="text-emerald-400"></strong>!
+        </p>
+
+        <div id="pix-qr-container" class="hidden bg-white p-3 rounded-xl w-44 h-44 mx-auto flex items-center justify-center">
+          <img id="pix-qr-img" src="" alt="QR Code PIX" class="w-full h-full object-contain" />
+        </div>
+
+        <div class="text-left">
+          <label class="text-xs font-bold text-slate-400 block mb-1">Código PIX Copia e Cola:</label>
+          <div class="flex gap-2">
+            <input id="pix-code-input" type="text" readonly class="flex-1 px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-300 font-mono" />
+            <button onclick="copyPixCode()" class="px-3 py-2 rounded-lg bg-emerald-500 text-slate-950 text-xs font-extrabold cursor-pointer">
+              Copiar
+            </button>
+          </div>
+        </div>
+
+        <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-400 flex items-center justify-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          <span>Aguardando confirmação automática do banco...</span>
+        </div>
+
+        <div id="sim-approve-box" class="pt-2 border-t border-slate-800">
+          <button onclick="simulateApprovalNow()" class="w-full py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-bold cursor-pointer transition">
+            🧪 [Modo Teste] Simular PIX Pago Agora (Testar Planilha + Disparo WhatsApp)
+          </button>
+        </div>
+      </div>
+
+      <div id="pix-approved-content" class="hidden space-y-4 py-3">
+        <div class="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto text-3xl font-bold">
+          ✓
+        </div>
+        <h4 class="text-xl font-extrabold text-white">Pagamento Confirmado!</h4>
+        <p class="text-xs text-slate-300">
+          Seu perfil personalizado foi salvo na planilha oficial e suas vagas acabaram de ser disparadas para o seu WhatsApp!
+        </p>
+        <div id="waha-status-box" class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-left font-mono text-emerald-400"></div>
+      </div>
+
+      <button onclick="closePixModal()" class="text-xs text-slate-400 hover:text-white underline cursor-pointer">
+        Fechar janela
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const AREA_CHOICES = [
+      { id: "Atendimento & Chat", icon: "💬", label: "Atendimento Digital, Chat, WhatsApp & Suporte", desc: "SAC 2.0, Relacionamento com Cliente, Call Center Digital" },
+      { id: "Comercial & SDR", icon: "📈", label: "Comercial, Vendas B2B, SDR & Customer Success", desc: "Pré-vendas, Inside Sales, Onboarding e Retenção" },
+      { id: "Administrativo & Finanças", icon: "📊", label: "Administrativo, Financeiro, RH ou Operações", desc: "Rotinas corporativas, assistente administrativo, bancos" },
+      { id: "Tecnologia & TI", icon: "💻", label: "Tecnologia, TI, Dados & Suporte Técnico", desc: "Helpdesk, Desenvolvimento, Análise de Sistemas, QA" },
+      { id: "Marketing & Criativo", icon: "📱", label: "Marketing Digital, Social Media, Tráfego & Design", desc: "Agências, Copywriting, Edição de Vídeo, E-commerce" }
+    ];
+
+    let currentStep = 1;
+    const totalSteps = 5;
+
+    let answers = {
+      profile: "homeoffice",
+      locationMode: "100% Remoto (Brasil Todo)",
+      city: "",
+      selectedAreas: ["Atendimento & Chat", "Comercial & SDR"],
+      customRole: "",
+      frustration: "tempo",
+      priority: "beneficios"
+    };
+
+    let selectedPlan = "mensal";
+    let currentPaymentId = null;
+    let pollTimer = null;
+
+    function startQuiz() {
+      currentStep = 1;
+      document.getElementById('step-hero').classList.add('hidden');
+      document.getElementById('step-questions').classList.remove('hidden');
+      renderStep();
+    }
+
+    function renderStep() {
+      const pct = Math.round((currentStep / totalSteps) * 100);
+      document.getElementById('quiz-step-label').textContent = `Etapa ${currentStep} de ${totalSteps}`;
+      document.getElementById('quiz-progress-pct').textContent = `${pct}%`;
+      document.getElementById('quiz-progress-bar').style.width = `${pct}%`;
+
+      const titleEl = document.getElementById('quiz-question-title');
+      const subEl = document.getElementById('quiz-question-subtitle');
+      const container = document.getElementById('quiz-options');
+      container.innerHTML = '';
+
+      // ETAPA 1: MODALIDADE / MOMENTO
+      if (currentStep === 1) {
+        titleEl.textContent = "1. Qual tipo de vaga você quer que o VagaZap garimpe para você?";
+        subEl.textContent = "Adaptamos os portais monitorados (Gupy, CIEE, Nube, Espro, Remotar, InfoJobs) para o seu perfil:";
+        const opts = [
+          { id: "homeoffice", icon: "💼", label: "Vagas Efetivas CLT ou PJ (Remoto ou Presencial)", desc: "Busco emprego efetivo na minha área de atuação" },
+          { id: "estagio", icon: "🎓", label: "Estágio (Presencial, Híbrido ou Home Office)", desc: "Estou cursando faculdade ou curso técnico" },
+          { id: "aprendiz", icon: "🚀", label: "Jovem Aprendiz / 1º Emprego (14 a 24 anos)", desc: "Busco minha primeira oportunidade sem exigência de experiência" }
+        ];
+        opts.forEach(opt => {
+          container.appendChild(createOptionButton(opt, () => {
+            answers.profile = opt.id;
+            currentStep = 2;
+            renderStep();
+          }));
+        });
+      }
+
+      // ETAPA 2: ÁREAS DE INTERESSE (MÚLTIPLA ESCOLHA + CARGO ESPECÍFICO)
+      else if (currentStep === 2) {
+        titleEl.textContent = "2. Quais áreas ou cargos você tem interesse em receber?";
+        subEl.textContent = "Você pode marcar uma ou mais opções abaixo e também digitar um cargo/curso específico:";
+
+        AREA_CHOICES.forEach(area => {
+          const isChecked = answers.selectedAreas.includes(area.id);
+          const row = document.createElement('div');
+          row.className = `p-3.5 rounded-xl border transition cursor-pointer flex items-start gap-3 ${isChecked ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-800 bg-slate-950'}`;
+          row.innerHTML = `
+            <input type="checkbox" ${isChecked ? 'checked' : ''} class="mt-1 accent-emerald-500 w-4 h-4 pointer-events-none" />
+            <span class="text-lg">${area.icon}</span>
+            <div class="flex-1">
+              <div class="text-xs md:text-sm font-bold text-white">${area.label}</div>
+              <div class="text-xs text-slate-400">${area.desc}</div>
+            </div>
+          `;
+          row.onclick = () => {
+            if (answers.selectedAreas.includes(area.id)) {
+              answers.selectedAreas = answers.selectedAreas.filter(a => a !== area.id);
+            } else {
+              answers.selectedAreas.push(area.id);
+            }
+            renderStep();
+          };
+          container.appendChild(row);
+        });
+
+        const customBox = document.createElement('div');
+        customBox.className = "pt-2";
+        customBox.innerHTML = `
+          <label class="block text-xs font-bold text-slate-300 mb-1">
+            🔎 Quer especificar algum cargo ou curso? (Opcional):
+          </label>
+          <input id="input-custom-role" type="text" value="${answers.customRole}" placeholder="Ex: Administração, Logística, Direito, Recepcionista..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-emerald-500" />
+          <button onclick="confirmAreasStep()" class="mt-4 w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm cursor-pointer transition">
+            Continuar →
+          </button>
+        `;
+        container.appendChild(customBox);
+      }
+
+      // ETAPA 3: MODALIDADE E LOCALIZAÇÃO (HOME OFFICE, PRESENCIAL OU AMBOS)
+      else if (currentStep === 3) {
+        titleEl.textContent = "3. Qual modalidade de trabalho você prefere?";
+        subEl.textContent = "Escolha se prefere trabalhar de casa (Home Office), Presencial na sua cidade (muito comum em cursos e estágios) ou Ambos:";
+
+        const locBox = document.createElement('div');
+        locBox.className = "space-y-3";
+        locBox.innerHTML = `
+          <button onclick="selectLocationMode('100% Home Office (Qualquer lugar do Brasil)')" class="w-full text-left p-4 rounded-xl bg-slate-950 hover:border-emerald-500 border border-slate-800 transition flex items-start gap-3.5 cursor-pointer group">
+            <span class="text-xl">🏠</span>
+            <div class="flex-1">
+              <div class="text-sm font-bold text-white group-hover:text-emerald-400 transition">Quero APENAS vagas 100% Home Office</div>
+              <div class="text-xs text-slate-400">Trabalhar de casa para empresas de qualquer lugar do Brasil</div>
+            </div>
+            <span class="text-xs text-slate-500 group-hover:text-emerald-400 font-bold self-center">→</span>
+          </button>
+
+          <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
+            <div class="flex items-start gap-3">
+              <span class="text-xl">🏢</span>
+              <div>
+                <div class="text-sm font-bold text-white">Vagas Presenciais na minha Cidade (ou Híbrido / Ambos)</div>
+                <div class="text-xs text-slate-400">Ideal para quem prefere trabalho presencial, estágios obrigatórios de cursos (Saúde, Direito, Engenharia, Administração) ou Jovem Aprendiz local</div>
+              </div>
+            </div>
+
+            <input id="input-city" type="text" value="${answers.city}" placeholder="Digite sua Cidade e Estado (Ex: Salvador - BA)" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500" />
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+              <button onclick="confirmCityLocation('presencial')" class="w-full py-2.5 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs cursor-pointer transition">
+                🏢 Quero APENAS Presencial →
+              </button>
+              <button onclick="confirmCityLocation('ambos')" class="w-full py-2.5 px-3 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-bold text-xs cursor-pointer transition">
+                🔄 Quero AMBOS (Presencial + Home Office) →
+              </button>
+            </div>
+          </div>
+        `;
+        container.appendChild(locBox);
+      }
+
+      // ETAPA 4: MAIOR FRUSTRAÇÃO
+      else if (currentStep === 4) {
+        titleEl.textContent = "4. Qual é a sua maior dor procurando vaga hoje?";
+        subEl.textContent = "Nosso robô usa isso para filtrar o que faz você perder tempo:";
+        const opts = [
+          { id: "tempo", icon: "⏱️", label: "Perco horas abrindo vários sites diferentes", desc: "Abro Gupy, Indeed, LinkedIn, CIEE e só acho vaga repetida" },
+          { id: "falso_remoto", icon: "😤", label: "Propaganda enganosa de 'Falso Home Office'", desc: "Diz que é remoto no título, mas exige morar em outra cidade" },
+          { id: "atraso", icon: "🐢", label: "Sempre chego atrasado nas melhores vagas", desc: "Quando vejo a vaga à noite, já tem mais de 1.500 candidatos" }
+        ];
+        opts.forEach(opt => {
+          container.appendChild(createOptionButton(opt, () => {
+            answers.frustration = opt.id;
+            currentStep = 5;
+            renderStep();
+          }));
+        });
+      }
+
+      // ETAPA 5: PRIORIDADE DE ROTINA / BENEFÍCIOS + UPLOAD OPCIONAL DE CURRÍCULO
+      else if (currentStep === 5) {
+        titleEl.textContent = "5. O que nossa IA deve priorizar no topo da sua lista às 07h?";
+        subEl.textContent = "Última etapa antes de liberarmos seu diagnóstico e sua vaga de amostra:";
+        const opts = [
+          { id: "beneficios", icon: "💳", label: "Pacote Completo de Benefícios (VR/VA Alto + Plano de Saúde)", desc: "Priorizar empresas com vale alimentação/refeição expressivo e assistência médica" },
+          { id: "horarios", icon: "🌙", label: "Jornada de 4h a 6h/dia, Escala 5x2 ou Turno Noturno", desc: "Horários que permitam conciliar estudos ou projetos" },
+          { id: "sem_exp", icon: "✨", label: "Vagas que NÃO exigem experiência prévia", desc: "Foco em empresas que treinam do zero" }
+        ];
+        opts.forEach(opt => {
+          container.appendChild(createOptionButton(opt, () => {
+            answers.priority = opt.id;
+            showLoadingThenResults();
+          }));
+        });
+
+        // CAIXINHA DE UPLOAD OPCIONAL DE CURRÍCULO
+        const resumeBox = document.createElement('div');
+        resumeBox.className = "mt-4 p-4 rounded-xl bg-slate-950 border border-slate-800 text-left space-y-2";
+        resumeBox.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+              <span>📎</span> Anexar Currículo em PDF (Opcional):
+            </span>
+            <span class="text-[11px] text-emerald-400 font-semibold">Leitura por IA</span>
+          </div>
+          <p class="text-xs text-slate-400">
+            Se tiver o PDF em mãos, selecione abaixo para cruzar com o robô da Gupy. Se não tiver agora, pode pular!
+          </p>
+          <div class="flex items-center gap-3 pt-1">
+            <input type="file" id="input-resume-file" accept=".pdf,.doc,.docx" onchange="handleResumeUpload(event)" class="text-xs text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-slate-800 file:text-emerald-400 hover:file:bg-slate-700 cursor-pointer" />
+            <span id="resume-filename-badge" class="text-xs text-emerald-400 font-bold hidden">✓ Anexado</span>
+          </div>
+        `;
+        container.appendChild(resumeBox);
+      }
+    }
+
+    function createOptionButton(opt, onClick) {
+      const btn = document.createElement('button');
+      btn.className = "w-full text-left p-4 rounded-xl bg-slate-950 hover:border-emerald-500 border border-slate-800 transition flex items-start gap-3.5 cursor-pointer group";
+      btn.innerHTML = `
+        <span class="text-xl mt-0.5">${opt.icon}</span>
+        <div class="flex-1">
+          <div class="text-sm font-bold text-white group-hover:text-emerald-400 transition">${opt.label}</div>
+          <div class="text-xs text-slate-400 mt-0.5">${opt.desc}</div>
+        </div>
+        <span class="text-xs text-slate-500 group-hover:text-emerald-400 font-bold self-center">→</span>
+      `;
+      btn.onclick = onClick;
+      return btn;
+    }
+
+    function confirmAreasStep() {
+      const customVal = document.getElementById('input-custom-role').value.trim();
+      answers.customRole = customVal;
+      if (answers.selectedAreas.length === 0 && !customVal) {
+        alert('Selecione pelo menos uma área ou digite o cargo desejado!');
+        return;
+      }
+      currentStep = 3;
+      renderStep();
+    }
+
+    function selectLocationMode(mode) {
+      answers.locationMode = mode;
+      answers.city = "Remoto Nacional";
+      currentStep = 4;
+      renderStep();
+    }
+
+    function confirmCityLocation(modeType) {
+      const cityVal = document.getElementById('input-city').value.trim();
+      if (!cityVal) {
+        alert('Por favor, digite sua Cidade e Estado (ex: Salvador - BA).');
+        return;
+      }
+      answers.city = cityVal;
+      if (modeType === 'presencial') {
+        answers.locationMode = `Apenas Presencial (${cityVal})`;
+      } else {
+        answers.locationMode = `Presencial + Home Office (${cityVal})`;
+      }
+      currentStep = 4;
+      renderStep();
+    }
+
+    function prevQuestion() {
+      if (currentStep > 1) {
+        currentStep--;
+        renderStep();
+      } else {
+        document.getElementById('step-questions').classList.add('hidden');
+        document.getElementById('step-hero').classList.remove('hidden');
+      }
+    }
+
+    function getAreasSummaryText() {
+      const list = [...answers.selectedAreas];
+      if (answers.customRole) list.push(answers.customRole);
+      return list.join(', ') || 'Geral';
+    }
+
+    async function showLoadingThenResults() {
+      document.getElementById('step-questions').classList.add('hidden');
+      document.getElementById('step-loading').classList.remove('hidden');
+      const mainArea = answers.customRole || (answers.selectedAreas[0] ? answers.selectedAreas[0].split('/')[0].trim() : 'Administrativo');
+      document.getElementById('loading-sub-summary').textContent = `Varrendo vagas reais abertas para: ${ getAreasSummaryText() } (${ answers.locationMode })...`;
+
+      let liveJobs = [];
+      try {
+        const qs = new URLSearchParams({
+          profile: answers.profile || 'homeoffice',
+          role: mainArea,
+          city: answers.city || '',
+          mode: answers.locationMode || ''
+        });
+        const resp = await fetch(`/api/jobs/live?${qs.toString()}`);
+        if (resp.ok) {
+          const data = await resp.json();
+          liveJobs = data.jobs || [];
+        }
+      } catch {}
+
+      document.getElementById('step-loading').classList.add('hidden');
+      document.getElementById('step-results').classList.remove('hidden');
+      populateResults(liveJobs);
+    }
+
+    function populateResults(liveJobs = []) {
+      const p = answers.profile;
+      const areaText = getAreasSummaryText();
+      const mainArea = answers.customRole || (answers.selectedAreas[0] ? answers.selectedAreas[0].split('/')[0].trim() : 'Administrativo');
+      const hasCity = answers.city && answers.city !== 'Remoto Nacional';
+      const cityLabel = hasCity ? answers.city : '100% Home Office';
+      const isPresencialOnly = answers.locationMode.startsWith('Apenas Presencial');
+
+      document.getElementById('result-location-badge').textContent = `📍 ${answers.locationMode}`;
+      document.getElementById('result-areas-summary').innerHTML = `🎯 <strong>Áreas configuradas no seu alerta:</strong> ${areaText}`;
+
+      if (p === 'aprendiz') {
+        document.getElementById('result-profile-badge').textContent = "🚀 Jovem Aprendiz / 1º Emprego";
+      } else if (p === 'estagio') {
+        document.getElementById('result-profile-badge').textContent = "🎓 Estágio Universitário / Técnico";
+      } else {
+        document.getElementById('result-profile-badge').textContent = isPresencialOnly ? `🏢 Vagas Presenciais (${answers.city})` : "💼 Vagas CLT / PJ (Remoto & Presencial)";
+      }
+
+      // Se encontrou vaga real na varredura ao vivo, exibe o título real, a empresa real e o link direto da vaga específica!
+      if (liveJobs && liveJobs.length > 0) {
+        const topJob = liveJobs[0];
+        document.getElementById('free-job-title').textContent = topJob.title;
+        document.getElementById('free-job-company').textContent = `${topJob.company} • 📍 ${topJob.modality}`;
+        document.getElementById('free-job-benefits').innerHTML = `🎁 <strong>Benefícios & Regime:</strong> ${topJob.benefits}`;
+        document.getElementById('free-job-link').href = topJob.link;
+      } else if (p === 'aprendiz') {
+        const searchQuery = encodeURIComponent(`Jovem Aprendiz ${mainArea}`);
+        const locQuery = encodeURIComponent(hasCity ? answers.city : 'Brasil');
+        document.getElementById('free-job-title').textContent = `Jovem Aprendiz — ${mainArea} (${cityLabel})`;
+        document.getElementById('free-job-company').textContent = `Vagas Abertas • CIEE, Gupy & LinkedIn Jobs • 4h a 6h/dia`;
+        document.getElementById('free-job-benefits').innerHTML = "🎁 <strong>Benefícios Médios:</strong> Salário R$ 1.280 + VR/VA + Vale Transporte + Plano de Saúde.";
+        document.getElementById('free-job-link').href = `https://br.linkedin.com/jobs/search?keywords=${searchQuery}&location=${locQuery}`;
+      } else if (p === 'estagio') {
+        const searchQuery = encodeURIComponent(`Estágio ${mainArea}`);
+        const locQuery = encodeURIComponent(hasCity ? answers.city : 'Brasil');
+        document.getElementById('free-job-title').textContent = `Estágio em ${mainArea} (${cityLabel})`;
+        document.getElementById('free-job-company').textContent = `Vagas Abertas • CIEE, Gupy, Nube & LinkedIn • 6h/dia`;
+        document.getElementById('free-job-benefits').innerHTML = "🎁 <strong>Benefícios Médios:</strong> Bolsa R$ 1.400 a R$ 1.800 + Auxílio Transporte/Home Office + Vale Refeição.";
+        document.getElementById('free-job-link').href = `https://br.linkedin.com/jobs/search?keywords=${searchQuery}&location=${locQuery}`;
+      } else {
+        document.getElementById('free-job-title').textContent = `Assistente de Relacionamento & Operações (${cityLabel})`;
+        document.getElementById('free-job-company').textContent = `Conexa Saúde • Portal Gupy • Contratação Imediata`;
+        document.getElementById('free-job-benefits').innerHTML = "🎁 <strong>Benefícios:</strong> Cartão de Benefícios Flexíveis de R$ 1.059,00/mês + Amil S450 + Odonto 100%.";
+        document.getElementById('free-job-link').href = "https://conexasaude.gupy.io/jobs/12081528?jobBoardSource=gupy_opportunities";
+      }
+      updateTotal();
+    }
+
+    function handleResumeUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        answers.resumeName = file.name;
+        const badge = document.getElementById('resume-filename-badge');
+        badge.textContent = `✓ ${file.name} pronto para análise`;
+        badge.classList.remove('hidden');
+      }
+    }
+
+    function selectPlan(plan) {
+      selectedPlan = plan;
+      document.getElementById('plan-card-mensal').className = plan === 'mensal'
+        ? "cursor-pointer p-4 rounded-xl border-2 border-emerald-500 bg-emerald-500/5 transition"
+        : "cursor-pointer p-4 rounded-xl border border-slate-800 bg-slate-950 transition";
+      document.getElementById('plan-card-trimestral').className = plan === 'trimestral'
+        ? "cursor-pointer p-4 rounded-xl border-2 border-emerald-500 bg-emerald-500/5 transition"
+        : "cursor-pointer p-4 rounded-xl border border-slate-800 bg-slate-950 transition";
+      updateTotal();
+    }
+
+    function updateTotal() {
+      let total = selectedPlan === 'trimestral' ? 49.90 : 19.90;
+      if (document.getElementById('bump-1').checked) total += 14.90;
+      if (document.getElementById('bump-2').checked) total += 9.90;
+      document.getElementById('checkout-total').textContent = 'R$ ' + total.toFixed(2).replace('.', ',');
+    }
+
+    async function createPixPayment() {
+      const btn = document.getElementById('btn-generate-pix');
+      btn.disabled = true;
+      btn.textContent = "Gerando PIX...";
+
+      const areaCombined = `${getAreasSummaryText()} | Local: ${answers.locationMode}`;
+
+      const payload = {
+        name: document.getElementById('client-name').value || 'Cliente',
+        whatsapp: document.getElementById('client-whatsapp').value || '',
+        profile: answers.profile,
+        area: areaCombined,
+        priority: answers.priority,
+        plan: selectedPlan,
+        bump1: document.getElementById('bump-1').checked,
+        bump2: document.getElementById('bump-2').checked
+      };
+
+      try {
+        const resp = await fetch('/api/pix/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await resp.json();
+        btn.disabled = false;
+        btn.textContent = "Gerar PIX Instantâneo e Receber no WhatsApp →";
+
+        if (!resp.ok) {
+          alert('Erro ao gerar PIX: ' + (data.error || 'Verifique o painel admin'));
+          return;
+        }
+
+        currentPaymentId = data.id;
+        document.getElementById('pix-modal-amount').textContent = 'R$ ' + Number(data.amount).toFixed(2).replace('.', ',');
+        document.getElementById('pix-modal-phone').textContent = payload.whatsapp;
+        document.getElementById('pix-code-input').value = data.qrCode || '';
+
+        if (data.qrCodeBase64) {
+          document.getElementById('pix-qr-img').src = 'data:image/png;base64,' + data.qrCodeBase64;
+          document.getElementById('pix-qr-container').classList.remove('hidden');
+        } else {
+          document.getElementById('pix-qr-container').classList.add('hidden');
+        }
+
+        document.getElementById('pix-pending-content').classList.remove('hidden');
+        document.getElementById('pix-approved-content').classList.add('hidden');
+        document.getElementById('pix-modal').classList.remove('hidden');
+
+        if (pollTimer) clearInterval(pollTimer);
+        pollTimer = setInterval(checkPaymentStatus, 3000);
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = "Gerar PIX Instantâneo e Receber no WhatsApp →";
+        alert('Erro de conexão com o servidor VagaZap.');
+      }
+    }
+
+    async function checkPaymentStatus() {
+      if (!currentPaymentId) return;
+      try {
+        const resp = await fetch('/api/pix/status/' + currentPaymentId);
+        const data = await resp.json();
+        if (data.status === 'approved') {
+          clearInterval(pollTimer);
+          showApprovedScreen(data);
+        }
+      } catch {}
+    }
+
+    async function simulateApprovalNow() {
+      if (!currentPaymentId) return;
+      const resp = await fetch('/api/pix/simulate-approve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentId: currentPaymentId })
+      });
+      const data = await resp.json();
+      if (pollTimer) clearInterval(pollTimer);
+      showApprovedScreen(data);
+    }
+
+    function showApprovedScreen(data) {
+      document.getElementById('pix-pending-content').classList.add('hidden');
+      document.getElementById('pix-approved-content').classList.remove('hidden');
+      const wahaInfo = data.wahaDispatch || {};
+      document.getElementById('waha-status-box').innerHTML = `
+        <div>✅ <strong>Google Sheets:</strong> Assinante salvo na aba 'Assinantes'</div>
+        <div class="mt-1">🎯 <strong>Filtro Salvo:</strong> ${data.area}</div>
+        <div class="mt-1">📲 <strong>WhatsApp Destino:</strong> ${wahaInfo.chatId || data.whatsapp}</div>
+        <div class="mt-1">📡 <strong>Status Envio:</strong> ${wahaInfo.ok ? 'Mensagem entregue no WhatsApp!' : (wahaInfo.error || 'Pronto')}</div>
+      `;
+    }
+
+    function copyPixCode() {
+      const input = document.getElementById('pix-code-input');
+      input.select();
+      navigator.clipboard.writeText(input.value);
+      alert('Código PIX copiado!');
+    }
+
+    function closePixModal() {
+      if (pollTimer) clearInterval(pollTimer);
+      document.getElementById('pix-modal').classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
