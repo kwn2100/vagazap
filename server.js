@@ -348,7 +348,8 @@ const CURATED_JOBS = {
 // Varredura em Tempo Real de Vagas Abertas (Retorna o Link Direto da Vaga Específica)
 async function scrapeLiveJobs({ profile = 'homeoffice', role = '', city = '', mode = '' }) {
   try {
-    const cleanRole = (role || 'Administrativo').split(',')[0].split('/')[0].trim();
+    const withoutBrackets = String(role || 'Administrativo').replace(/\[[^\]]*\]/g, '').trim();
+    const cleanRole = (withoutBrackets || 'Administrativo').split(',')[0].split('/')[0].trim();
     let keywordPrefix = '';
     if (profile === 'estagio') keywordPrefix = 'Estágio ';
     else if (profile === 'aprendiz') keywordPrefix = 'Jovem Aprendiz ';
