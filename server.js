@@ -36,8 +36,28 @@ const WA_AUTH_DIR = path.join(DATA_DIR, 'wa_auth');
 const SUBS_FILE = path.join(DATA_DIR, 'subscribers.json');
 const PAYMENTS_FILE = path.join(DATA_DIR, 'payments.json');
 
+const DEFAULT_SUBS = [
+  {
+    id: '88918f6e-9fc9-4b7d-8545-ce393223b847',
+    paymentId: 'trial_1793031584578',
+    createdAt: '2026-10-26T16:19:44.578Z',
+    name: 'Maria Rafaela',
+    whatsapp: '71988382214',
+    profile: 'homeoffice',
+    area: '[💼 CLT/PJ + 🎓 Estágio + 🚀 Jovem Aprendiz] Atendimento & Chat, Comercial & SDR, Administrativo & Finanças, Saúde, Psicologia & Educação, Marketing & Criativo | Local: (100% Home Office)',
+    plan: 'trial_3d',
+    planName: 'Teste Grátis (3 Dias)',
+    bump1: true,
+    bump2: true,
+    amount: 0,
+    status: 'active',
+    expiresAt: '29/10/2026',
+    sentJobLinks: []
+  }
+];
+
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-if (!fs.existsSync(SUBS_FILE)) fs.writeFileSync(SUBS_FILE, JSON.stringify([], null, 2));
+if (!fs.existsSync(SUBS_FILE)) fs.writeFileSync(SUBS_FILE, JSON.stringify(DEFAULT_SUBS, null, 2));
 if (!fs.existsSync(PAYMENTS_FILE)) fs.writeFileSync(PAYMENTS_FILE, JSON.stringify({}, null, 2));
 
 function readJson(filePath, fallback) {
@@ -405,72 +425,143 @@ const FALLBACK_ACTIVE_SEARCHES = {
   ]
 };
 
-// Varredura em Tempo Real de Vagas Abertas (Filtra vagas recentes e evita repetidas)
+// Trava Obrigatória: Garante que 100% das vagas sejam do BRASIL e em Português (Bloqueia EUA / Exterior)
+function isStrictBrazilJob(jobLoc, title) {
+  const loc = String(jobLoc || '').trim();
+  const t = String(title || '').trim();
+
+  // 1. Bloqueio imediato de EUA e outros países na localização ou título
+  const foreignRegex = /\b(United States|Estados Unidos|USA|U\.S\.|UK|United Kingdom|Canada|Canadá|India|Índia|Mexico|México|Colombia|Colômbia|Argentina|Chile|Peru|Portugal|Spain|Espanha|Germany|Alemanha|France|França|Italy|Itália|Poland|Philippines|Pakistan|Nigeria|Australia|New York|San Francisco|California|Texas|Florida|Illinois|Washington|Massachusetts|Georgia|North Carolina|Ohio|Pennsylvania|Virginia|Colorado|Arizona|Atlanta|Chicago|Austin|Boston|Seattle|Los Angeles|Miami|Dallas|Denver|London|Toronto|Madrid|Lisbon|Lisboa|LATAM|Latin America)\b/i;
+  if (foreignRegex.test(loc) || foreignRegex.test(t)) return false;
+
+  // 2. Bloqueia siglas de estados americanos no formato ", CA", ", NY", ", TX", ", US"
+  if (/,\s*(US|CA|NY|TX|FL|IL|WA|MA|GA|NC|OH|PA|VA|CO|AZ|NJ|MI|TN|IN|MO|MD|WI|MN|OR|SC|AL|LA|KY|UT|IA|NV|AR|MS|KS|NM|NE|WV|ID|HI|NH|ME|RI|MT|DE|SD|ND|AK|VT|WY)\b/.test(loc)) {
+    return false;
+  }
+
+  // 3. Bloqueia títulos de vagas internacionais em inglês ou espanhol
+  if (/\b(English Required|Fluent English|Bilingual|Remote US|US Remote|Work from Home - US|Customer Service Representative|Sales Representative|Account Executive|Virtual Assistant|Software Engineer|atenci[oó]n al cliente|espa[ñn]ol|spanish|gallego|biling[üu]e|habla hispana)\b/i.test(t)) {
+    return false;
+  }
+
+  // 4. Exige confirmação positiva de localização no Brasil (Estados brasileiros, capitais ou "Brasil"/"Brazil")
+  const brazilRegex = /\b(Brasil|Brazil|São Paulo|Rio de Janeiro|Minas Gerais|Bahia|Paraná|Rio Grande do Sul|Pernambuco|Ceará|Santa Catarina|Goiás|Distrito Federal|Espírito Santo|Pará|Amazonas|Mato Grosso|Maranhão|Paraíba|Rio Grande do Norte|Alagoas|Piauí|Sergipe|Rondônia|Tocantins|Acre|Amapá|Roraima|Salvador|Curitiba|Belo Horizonte|Recife|Porto Alegre|Fortaleza|Brasília|Campinas|Goiânia|Manaus|Belém|Florianópolis|Vitória|Natal|João Pessoa|Maceió|Teresina|Aracaju|Sorocaba|Uberlândia|Ribeirão Preto|Joinville|Londrina|Niterói|Barueri|Osasco|Santo André|São Bernardo|Guarulhos)\b|(-\s*(SP|RJ|MG|BA|PR|RS|PE|CE|SC|DF|GO|ES|PA|AM|MT|MS|MA|PB|RN|AL|PI|SE|RO|TO|AC|AP|RR)\b)|(,\s*(SP|RJ|MG|BA|PR|RS|PE|CE|SC|DF|GO|ES)\b)/i;
+
+  return brazilRegex.test(loc);
+}
+
+// Converte o nome da categoria do Quiz em termos de busca brasileiros certeiros
+function buildBrazilianSearchTerms(rawRoleStr, profile) {
+  const withoutBrackets = String(rawRoleStr || 'Administrativo').replace(/\[[^\]]*\]/g, '').trim();
+  const parts = withoutBrackets.split(',').map(s => s.trim()).filter(Boolean);
+  const terms = [];
+
+  for (const part of parts) {
+    const lower = part.toLowerCase();
+    if (lower.includes('atendimento') || lower.includes('chat')) {
+      terms.push('Atendimento ao Cliente');
+    } else if (lower.includes('comercial') || lower.includes('sdr') || lower.includes('vendas')) {
+      terms.push('Comercial Pré-Vendas SDR');
+    } else if (lower.includes('administrativo') || lower.includes('finanças')) {
+      terms.push('Assistente Administrativo');
+    } else if (lower.includes('saúde') || lower.includes('psicologia') || lower.includes('educação')) {
+      terms.push('Psicologia Recursos Humanos');
+    } else if (lower.includes('marketing') || lower.includes('criativo')) {
+      terms.push('Marketing Digital Social Media');
+    } else if (lower.includes('tecnologia') || lower.includes('ti')) {
+      terms.push('Suporte Técnico TI');
+    } else {
+      const cleaned = part.split('/')[0].replace(/&/g, '').replace(/\s+/g, ' ').trim();
+      if (cleaned.length >= 3) terms.push(cleaned);
+    }
+  }
+
+  const unique = [...new Set(terms)];
+  if (unique.length === 0) unique.push('Assistente Administrativo');
+
+  let prefix = '';
+  if (profile === 'estagio') prefix = 'Estágio ';
+  else if (profile === 'aprendiz') prefix = 'Jovem Aprendiz ';
+
+  return unique.map(t => `${prefix}${t}`.trim());
+}
+
+// Varredura em Tempo Real de Vagas Abertas (100% Travada no Brasil com geoId=106057199)
 async function scrapeLiveJobs({ profile = 'homeoffice', role = '', city = '', mode = '', excludeLinks = [] }) {
   try {
-    const withoutBrackets = String(role || 'Administrativo').replace(/\[[^\]]*\]/g, '').trim();
-    const cleanRole = (withoutBrackets || 'Administrativo').split(',')[0].split('/')[0].replace(/&/g, '').replace(/\s+/g, ' ').trim();
     const isHome = !city || city === 'Remoto Nacional' || city.includes('Home Office') || mode.includes('Home Office');
-    let keywordPrefix = '';
-    if (profile === 'estagio') keywordPrefix = 'Estágio ';
-    else if (profile === 'aprendiz') keywordPrefix = 'Jovem Aprendiz ';
-    else if (isHome) keywordPrefix = 'Remoto ';
-
-    const keywords = `${keywordPrefix}${cleanRole}`.trim();
-    const location = isHome ? 'Brasil' : city;
-
-    // f_TPR=r604800 traz apenas vagas abertas/publicadas recentemente para evitar vagas antigas/encerradas
-    const urlsToTry = [
-      `https://br.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=${encodeURIComponent(keywords)}&location=${encodeURIComponent(location)}&f_TPR=r604800&start=0`,
-      `https://br.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=${encodeURIComponent(keywords)}&location=${encodeURIComponent(location)}&start=0`
-    ];
+    const searchTerms = buildBrazilianSearchTerms(role, profile);
+    const maxPerTerm = searchTerms.length >= 3 ? 1 : (searchTerms.length === 2 ? 3 : 5);
 
     const results = [];
     const seenLinks = new Set(excludeLinks || []);
 
-    for (const searchUrl of urlsToTry) {
+    // Passada 1: Pega vagas distribuídas entre todas as áreas que a pessoa escolheu
+    // Passada 2 (se faltar para completar 5): Pega vagas adicionais da 1ª área
+    const passes = [maxPerTerm, 5];
+
+    for (const limitPerQuery of passes) {
       if (results.length >= 5) break;
-      const resp = await fetch(searchUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
-      });
-      if (!resp.ok) continue;
 
-      const html = await resp.text();
-      const blocks = html.split('<li');
-
-      for (const block of blocks) {
-        const linkMatch = block.match(/href="(https:\/\/[^"?]*linkedin\.com\/jobs\/view\/[^"?]+)/);
-        const titleMatch = block.match(/<span class="sr-only">\s*([\s\S]*?)\s*<\/span>/) || block.match(/base-search-card__title[^>]*>([\s\S]*?)<\/h3>/);
-        const companyMatch = block.match(/base-search-card__subtitle[^>]*>([\s\S]*?)<\/h4>/);
-        const locMatch = block.match(/job-search-card__location[^>]*>([\s\S]*?)<\/span>/);
-
-        if (titleMatch && linkMatch) {
-          const directLink = linkMatch[1];
-          if (seenLinks.has(directLink)) continue;
-          seenLinks.add(directLink);
-
-          const title = titleMatch[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-          const company = companyMatch ? companyMatch[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() : 'Empresa Verificada';
-          const jobLoc = locMatch ? locMatch[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() : location;
-
-          let benefitsText = 'Vaga aberta verificada hoje • Candidatura direta no link oficial';
-          if (profile === 'estagio') {
-            benefitsText = 'Modalidade Estágio • Bolsa Auxílio e requisitos na página oficial';
-          } else if (profile === 'aprendiz') {
-            benefitsText = 'Modalidade Jovem Aprendiz • Requisitos e benefícios na página oficial';
-          }
-
-          results.push({
-            title,
-            company,
-            modality: jobLoc,
-            benefits: benefitsText,
-            link: directLink
-          });
-        }
+      for (const keywords of searchTerms) {
         if (results.length >= 5) break;
+
+        // Trava oficial do LinkedIn no Brasil (mesmo rodando em servidor nos EUA como o Render): location=Brazil & geoId=106057199
+        const locationParam = isHome ? 'Brazil' : `${city}, Brazil`;
+        const geoParam = isHome ? '&geoId=106057199' : '';
+        const wtParam = isHome ? '&f_WT=2' : '';
+
+        const searchUrl = `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=${encodeURIComponent(keywords)}&location=${encodeURIComponent(locationParam)}${geoParam}${wtParam}&f_TPR=r604800&start=0`;
+
+        const resp = await fetch(searchUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept-Language': 'pt-BR,pt;q=0.9'
+          }
+        });
+        if (!resp.ok) continue;
+
+        const html = await resp.text();
+        const blocks = html.split('<li');
+        let addedForThisQuery = 0;
+
+        for (const block of blocks) {
+          const linkMatch = block.match(/href="(https:\/\/[^"?]*linkedin\.com\/jobs\/view\/[^"?]+)/);
+          const titleMatch = block.match(/<span class="sr-only">\s*([\s\S]*?)\s*<\/span>/) || block.match(/base-search-card__title[^>]*>([\s\S]*?)<\/h3>/);
+          const companyMatch = block.match(/base-search-card__subtitle[^>]*>([\s\S]*?)<\/h4>/);
+          const locMatch = block.match(/job-search-card__location[^>]*>([\s\S]*?)<\/span>/);
+
+          if (titleMatch && linkMatch) {
+            const title = titleMatch[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+            const company = companyMatch ? companyMatch[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() : 'Empresa Verificada';
+            const jobLoc = locMatch ? locMatch[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() : 'Brasil';
+            // Normaliza sempre para o domínio brasileiro br.linkedin.com
+            const directLink = linkMatch[1].replace(/^https:\/\/[a-z]+\.linkedin\.com/, 'https://br.linkedin.com');
+
+            // TRAVA OBRIGATÓRIA: Só passa se for comprovadamente vaga no Brasil!
+            if (!isStrictBrazilJob(jobLoc, title)) continue;
+            if (seenLinks.has(directLink)) continue;
+            seenLinks.add(directLink);
+
+            let benefitsText = 'Vaga no Brasil verificada hoje • Candidatura direta no link oficial';
+            if (profile === 'estagio') {
+              benefitsText = 'Modalidade Estágio no Brasil • Bolsa Auxílio e requisitos na página oficial';
+            } else if (profile === 'aprendiz') {
+              benefitsText = 'Modalidade Jovem Aprendiz no Brasil • Requisitos e benefícios na página oficial';
+            }
+
+            results.push({
+              title,
+              company,
+              modality: isHome ? `${jobLoc} (100% Home Office - Brasil)` : `${jobLoc} (Brasil)`,
+              benefits: benefitsText,
+              link: directLink
+            });
+
+            addedForThisQuery++;
+            if (addedForThisQuery >= limitPerQuery || results.length >= 5) break;
+          }
+        }
       }
     }
 
