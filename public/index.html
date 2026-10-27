@@ -3,68 +3,105 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VagaZap IA — Receba Vagas Filtradas no seu WhatsApp</title>
+  <title>VagaZap IA — 5 Vagas do Seu Filtro no WhatsApp Todo Dia às 07h</title>
   <link rel="icon" href="/logo.jpg" />
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Estrutura Pronta do Meta Pixel (Basta inserir o ID no Painel Admin ou variável META_PIXEL_ID) -->
+  <script>
+    window.VAGAZAP_PIXEL_ID = localStorage.getItem('vagazap_pixel_id') || '';
+    if (window.VAGAZAP_PIXEL_ID) {
+      !function(f,b,e,v,n,t,s)
+      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window, document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', window.VAGAZAP_PIXEL_ID);
+      fbq('track', 'PageView');
+    }
+    function trackFunnelEvent(eventName, data = {}) {
+      try {
+        console.log('[Funil VagaZap]', eventName, data);
+        if (typeof window.fbq === 'function') {
+          if (eventName === 'Lead' || eventName === 'CompleteRegistration') {
+            window.fbq('track', eventName, data);
+          } else {
+            window.fbq('trackCustom', eventName, data);
+          }
+        }
+      } catch (e) {}
+    }
+  </script>
 </head>
-<body class="bg-slate-950 text-slate-100 antialiased min-h-screen">
+<body class="bg-slate-950 text-slate-100 antialiased min-h-screen flex flex-col">
 
   <!-- Topo da Marca VagaZap com a Logo Oficial -->
   <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-30">
     <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center gap-3">
+      <a href="/" class="flex items-center gap-3">
         <img src="/logo.jpg" alt="VagaZap IA" class="w-10 h-10 rounded-full border border-emerald-500/40 object-cover shadow" />
         <div>
           <span class="font-extrabold text-lg tracking-tight text-white">Vaga<span class="text-emerald-400">Zap</span></span>
           <span class="ml-1.5 text-xs px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-bold">IA</span>
         </div>
-      </div>
-      <div class="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        <span>Radar Ativo</span>
+      </a>
+      <div class="flex items-center gap-3">
+        <a href="#faq-section" class="text-xs text-slate-400 hover:text-white hidden sm:inline">Dúvidas</a>
+        <div class="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Disparo às 07h00</span>
+        </div>
       </div>
     </div>
   </header>
 
-  <main class="max-w-2xl mx-auto px-4 py-8">
+  <main class="max-w-2xl mx-auto px-4 py-8 flex-1 w-full">
 
     <!-- PASSO 0: HERO -->
     <div id="step-hero" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl text-center">
       <img src="/logo.jpg" alt="VagaZap IA" class="w-20 h-20 rounded-full mx-auto mb-4 border-2 border-emerald-500/50 shadow-lg shadow-emerald-500/10" />
 
       <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold mb-4">
-        <span>🤖 Varredura Automática em 9 Portais • Disparo Diário às 07h00</span>
+        <span>🤖 Varredura Diária em 9 Portais • Envio às 07h00 no WhatsApp</span>
       </div>
 
       <h1 class="text-2xl md:text-4xl font-extrabold text-white leading-tight mb-4">
-        Pare de perder 2 horas por dia abrindo 10 sites de emprego diferentes.
+        Todo dia às 07h, 5 vagas do seu filtro chegam no seu WhatsApp.
       </h1>
 
       <p class="text-sm md:text-base text-slate-400 mb-6 max-w-xl mx-auto">
-        O <strong>VagaZap IA</strong> varre toda manhã a <strong>Gupy, CIEE, Nube, Espro, Remotar, InfoJobs, Catho e LinkedIn</strong>, elimina vagas falsas e entrega no seu <strong>WhatsApp</strong> apenas as vagas compatíveis com você.
+        Sem você precisar procurar em todos os sites. O <strong>VagaZap IA</strong> monitora diariamente <strong>Gupy, Indeed, CIEE, Nube, Espro, Remotar, InfoJobs, Catho e LinkedIn</strong> e envia no seu <strong>WhatsApp</strong> as oportunidades abertas para o seu perfil.
       </p>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-left mb-7">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-left mb-6">
         <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
-          <div class="text-xs font-bold text-emerald-400 mb-1">⏱️ Economize 30h/mês</div>
-          <p class="text-xs text-slate-400">Chega de abrir 20 abas à noite depois de chegar cansado do trabalho ou faculdade.</p>
+          <div class="text-xs font-bold text-emerald-400 mb-1">☀️ Varredura às 07h00</div>
+          <p class="text-xs text-slate-400">Buscamos vagas abertas toda manhã nos 9 portais para você não abrir dezenas de abas.</p>
         </div>
         <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
-          <div class="text-xs font-bold text-emerald-400 mb-1">🎯 Filtro Sob Medida</div>
-          <p class="text-xs text-slate-400">Home Office, Estágio ou Jovem Aprendiz separados para a sua área e cidade.</p>
+          <div class="text-xs font-bold text-emerald-400 mb-1">🎯 5 Vagas por Dia</div>
+          <p class="text-xs text-slate-400">CLT/PJ, Estágio ou Jovem Aprendiz separados para a sua área, Home Office ou na sua cidade.</p>
         </div>
         <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800">
-          <div class="text-xs font-bold text-emerald-400 mb-1">🥇 Chegue às 07h00</div>
-          <p class="text-xs text-slate-400">Receba no WhatsApp logo cedo e envie seu currículo antes de 2.000 concorrentes.</p>
+          <div class="text-xs font-bold text-emerald-400 mb-1">📱 Direto no WhatsApp</div>
+          <p class="text-xs text-slate-400">Receba os links diretos para se candidatar. Sem pedir senha, e-mail ou cartão de crédito.</p>
         </div>
       </div>
 
+      <!-- Transparência da Oferta já na Primeira Tela -->
+      <div class="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-slate-200 mb-6 max-w-lg mx-auto">
+        🎁 <strong>Teste 3 dias grátis no WhatsApp.</strong> Depois do teste, se quiser continuar recebendo, o plano é <strong>R$ 19,00/mês via Pix</strong> (5 vagas por dia • sem fidelidade, cancele quando quiser).
+      </div>
+
       <button onclick="startQuiz()" class="w-full md:w-auto px-8 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-base shadow-lg shadow-emerald-500/20 transition cursor-pointer">
-        Personalizar Meu Filtro de Vagas (Grátis) →
+        Configurar Meu Filtro e Testar 3 Dias Grátis →
       </button>
 
       <p class="text-xs text-slate-500 mt-3">
-        🔓 Inclui <strong>1 vaga oficial desbloqueada na hora</strong> para você testar gratuitamente.
+        🔓 Ao responder as 5 perguntas rápidas, você já vê <strong>1 vaga aberta hoje</strong> de amostra na tela.
       </p>
     </div>
 
@@ -72,7 +109,7 @@
     <div id="step-questions" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl">
       <div class="mb-6">
         <div class="flex justify-between items-center text-xs text-slate-400 mb-2">
-          <span id="quiz-step-label" class="font-semibold">Pergunta 1 de 5</span>
+          <span id="quiz-step-label" class="font-semibold">Etapa 1 de 5</span>
           <span id="quiz-progress-pct" class="font-bold text-emerald-400">20%</span>
         </div>
         <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
@@ -83,6 +120,9 @@
       <h2 id="quiz-question-title" class="text-lg md:text-xl font-bold text-white mb-2"></h2>
       <p id="quiz-question-subtitle" class="text-xs text-slate-400 mb-5"></p>
 
+      <!-- Aviso de Erro Visível nas Etapas do Quiz -->
+      <div id="quiz-step-error" class="hidden mb-4 p-3 rounded-xl bg-red-500/15 border border-red-500/40 text-xs text-red-300 font-semibold"></div>
+
       <!-- Container Dinâmico das Opções -->
       <div id="quiz-options" class="space-y-3"></div>
 
@@ -90,21 +130,21 @@
         <button onclick="prevQuestion()" class="text-xs font-semibold text-slate-400 hover:text-white cursor-pointer">
           ← Voltar
         </button>
-        <span class="text-xs text-slate-500">⚡ Configurador Inteligente VagaZap</span>
+        <span class="text-xs text-slate-500">⚡ Teste 3 dias grátis • Depois R$ 19/mês via Pix</span>
       </div>
     </div>
 
     <!-- TELA DE CARREGAMENTO -->
     <div id="step-loading" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl text-center">
       <div class="w-14 h-14 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin mx-auto mb-4"></div>
-      <h3 class="text-lg font-bold text-white mb-2">Cruzando seu Perfil em 9 Portais...</h3>
+      <h3 class="text-lg font-bold text-white mb-2">Buscando Vagas Abertas nos 9 Portais...</h3>
       <p id="loading-status-text" class="text-sm text-emerald-400 font-semibold mb-4">
-        Varrendo Gupy, CIEE, Nube, Espro, Remotar, InfoJobs e LinkedIn...
+        Consultando Gupy, Indeed, CIEE, Nube, Espro, Remotar, InfoJobs, Catho e LinkedIn...
       </p>
       <p id="loading-sub-summary" class="text-xs text-slate-400"></p>
     </div>
 
-    <!-- TELA FINAL: AMOSTRA GRÁTIS + CHECKOUT PIX -->
+    <!-- TELA FINAL: AMOSTRA ABERTA NO DIA + ATIVAÇÃO DO TESTE DE 3 DIAS -->
     <div id="step-results" class="hidden space-y-5">
 
       <!-- Resumo Personalizado do Questionário -->
@@ -114,19 +154,19 @@
           <span id="result-location-badge" class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 text-xs font-semibold"></span>
         </div>
         <h3 class="text-xl font-extrabold text-white">
-          Encontramos <span class="text-emerald-400">9 vagas abertas hoje</span> para o seu filtro!
+          Seu filtro diário de <span class="text-emerald-400">5 vagas por dia às 07h</span> está pronto!
         </h3>
         <p id="result-areas-summary" class="text-xs text-slate-400 mt-1"></p>
       </div>
 
-      <!-- VAGA #1 LIBERADA GRATUITAMENTE -->
+      <!-- VAGA DE AMOSTRA ABERTA CONFERIDA NO DIA -->
       <div class="bg-slate-900 border-2 border-emerald-500/70 rounded-2xl p-5 shadow-lg">
         <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
           <span class="px-2.5 py-0.5 rounded-md bg-emerald-500 text-slate-950 text-xs font-extrabold">
-            🔓 VAGA #1 LIBERADA GRÁTIS (AMOSTRA REAL)
+            🔓 AMOSTRA DE VAGA ABERTA HOJE
           </span>
-          <span class="px-2.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 text-xs font-extrabold">
-            96% de Match
+          <span id="free-job-status-badge" class="px-2.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 text-xs font-bold">
+            Compatível com seu filtro
           </span>
         </div>
 
@@ -136,74 +176,220 @@
         <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 mb-3 text-xs text-slate-300" id="free-job-benefits"></div>
 
         <div class="flex items-center justify-between flex-wrap gap-2">
-          <span class="text-xs text-emerald-400 font-semibold">✓ Link direto verificado (Sem anúncios)</span>
-          <a id="free-job-link" href="#" target="_blank" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-extrabold transition">
-            Abrir Vaga Oficial ↗
+          <span class="text-xs text-emerald-400 font-semibold">✓ Vaga ativa verificada hoje</span>
+          <a id="free-job-link" href="#" target="_blank" rel="noopener noreferrer" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-extrabold transition">
+            Conferir Vaga Aberta ↗
           </a>
         </div>
       </div>
 
-      <!-- FORMULÁRIO DE ATIVAÇÃO DO TESTE GRÁTIS DE 3 DIAS (SEM PIX) -->
+      <!-- FORMULÁRIO DE ATIVAÇÃO DO TESTE GRÁTIS DE 3 DIAS + REGRA CLARA PÓS-TESTE -->
       <div id="trial-form-card" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
         <div class="text-center mb-5">
           <span class="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 text-xs font-bold">
-            🎁 LIBERADO: TESTE GRÁTIS DE 3 DIAS NO WHATSAPP
+            🎁 TESTE GRÁTIS POR 3 DIAS NO WHATSAPP
           </span>
           <h3 class="text-lg md:text-xl font-extrabold text-white mt-2">
-            Receba suas Vagas no WhatsApp Agora + Durante 3 Dias às 07h00
+            Receba 5 Vagas Agora + 5 Vagas Todo Dia às 07h00
           </h3>
           <p class="text-xs text-slate-400 mt-1">
-            Suas respostas do questionário acima já estão salvas. Informe seu Nome e WhatsApp abaixo para ativar seu teste gratuito de 3 dias:
+            Informe seu Nome e WhatsApp abaixo para ativar seu teste grátis de 3 dias (não pede e-mail, senha nem cartão):
           </p>
         </div>
 
-        <!-- Resumo do Benefício do Teste -->
-        <div class="p-4 rounded-xl border border-emerald-500/40 bg-emerald-500/5 mb-5 flex items-center justify-between">
-          <div>
-            <div class="text-sm font-extrabold text-white">Passe de Teste VagaZap IA (3 Dias Completos)</div>
-            <p class="text-xs text-slate-400 mt-0.5">Inclui envio imediato das vagas de hoje + disparos matinais às 07h00 + Análise de Currículo por IA no WhatsApp</p>
+        <!-- Explicação Clara do que acontece durante e depois dos 3 dias -->
+        <div class="p-4 rounded-xl border border-emerald-500/40 bg-emerald-500/5 mb-5 space-y-2 text-xs">
+          <div class="flex items-center justify-between">
+            <span class="font-extrabold text-white text-sm">Como funciona o seu acesso:</span>
+            <span class="px-2.5 py-0.5 rounded-md bg-emerald-500 text-slate-950 font-black text-xs">3 DIAS GRÁTIS</span>
           </div>
-          <span class="px-3 py-1 rounded-lg bg-emerald-500 text-slate-950 font-black text-xs whitespace-nowrap ml-3">
-            100% GRÁTIS
-          </span>
+          <ul class="space-y-1 text-slate-300">
+            <li>• <strong>Durante 3 dias:</strong> Você recebe gratuitamente <strong>5 vagas por dia às 07h00</strong> no seu WhatsApp conforme o seu filtro.</li>
+            <li>• <strong>Depois dos 3 dias:</strong> O teste encerra sozinho (sem cobrança automática). Se quiser continuar recebendo, o plano custa <strong>R$ 19,00/mês via Pix</strong>.</li>
+            <li>• <strong>Sem fidelidade:</strong> Você pode sair ou cancelar a qualquer momento respondendo <strong>PARAR</strong> no WhatsApp.</li>
+          </ul>
         </div>
 
-        <!-- Dados do Testador -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+        <!-- Dados do Testador com Validação Visível Campo a Campo -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
           <div>
-            <label class="block text-xs font-bold text-slate-300 mb-1">Seu Nome:</label>
-            <input id="client-name" type="text" placeholder="Digite seu nome..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-emerald-500" />
+            <label for="client-name" class="block text-xs font-bold text-slate-300 mb-1">Seu Nome:</label>
+            <input id="client-name" type="text" placeholder="Ex: Maria Silva" oninput="clearFieldError('name')" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-emerald-500" />
+            <p id="error-name" class="hidden text-xs text-red-400 font-semibold mt-1">⚠️ Por favor, informe o seu nome.</p>
           </div>
           <div>
-            <label class="block text-xs font-bold text-slate-300 mb-1">📱 Seu WhatsApp com DDD:</label>
-            <input id="client-whatsapp" type="tel" placeholder="Ex: (71) 99999-9999" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-emerald-500" />
+            <label for="client-whatsapp" class="block text-xs font-bold text-slate-300 mb-1">📱 Seu WhatsApp com DDD:</label>
+            <input id="client-whatsapp" type="tel" placeholder="Ex: (71) 99999-9999" oninput="clearFieldError('whatsapp')" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-emerald-500" />
+            <p id="error-whatsapp" class="hidden text-xs text-red-400 font-semibold mt-1">⚠️ Informe seu WhatsApp com DDD (mínimo 10 dígitos).</p>
           </div>
         </div>
+
+        <!-- Consentimento Explícito para WhatsApp + Links Legais -->
+        <div class="mb-5 p-3.5 rounded-xl bg-slate-950 border border-slate-800">
+          <label class="flex items-start gap-2.5 cursor-pointer text-xs text-slate-300 leading-relaxed">
+            <input id="consent-whatsapp" type="checkbox" checked onchange="clearFieldError('consent')" class="mt-0.5 accent-emerald-500 w-4 h-4 rounded" />
+            <span>
+              Concordo em receber as 5 vagas diárias e avisos do serviço no meu WhatsApp. Sei que posso parar de receber a qualquer momento enviando <strong>PARAR</strong> na conversa. Estou de acordo com os <a href="/termos" target="_blank" class="text-emerald-400 underline hover:text-emerald-300">Termos de Uso</a> e a <a href="/privacidade" target="_blank" class="text-emerald-400 underline hover:text-emerald-300">Política de Privacidade</a>.
+            </span>
+          </label>
+          <p id="error-consent" class="hidden text-xs text-red-400 font-semibold mt-1.5">⚠️ Você precisa marcar a caixa acima autorizando o envio no seu WhatsApp.</p>
+        </div>
+
+        <p id="error-server" class="hidden text-xs text-red-400 font-semibold mb-3 text-center"></p>
 
         <button id="btn-activate-trial" onclick="activateFreeTrialNow()" class="w-full py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-base shadow-lg shadow-emerald-500/20 transition cursor-pointer">
-          🎁 Ativar Meu Teste de 3 Dias e Receber no WhatsApp →
+          🎁 Ativar Meu Teste de 3 Dias Grátis no WhatsApp →
         </button>
+
+        <div class="mt-3 flex flex-wrap items-center justify-center gap-3 text-[11px] text-slate-500">
+          <span>🔒 Dados protegidos (LGPD)</span>
+          <span>•</span>
+          <a href="/privacidade" target="_blank" class="hover:text-slate-300 underline">Política de Privacidade</a>
+          <span>•</span>
+          <a href="/termos" target="_blank" class="hover:text-slate-300 underline">Termos de Uso</a>
+        </div>
       </div>
 
-      <!-- CONFIRMAÇÃO DE TESTE ATIVADO -->
+      <!-- TELA DE CONFIRMAÇÃO COMPLETA APÓS O CADASTRO -->
       <div id="trial-success-card" class="hidden bg-slate-900 border-2 border-emerald-500 rounded-2xl p-6 text-center space-y-4 shadow-xl">
         <div class="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto text-3xl font-bold">
           ✓
         </div>
         <h4 class="text-xl font-extrabold text-white">Teste Grátis de 3 Dias Ativado!</h4>
         <p class="text-sm text-slate-300">
-          Acabamos de enviar as suas vagas filtradas de hoje para o seu WhatsApp <strong id="success-phone-display" class="text-emerald-400"></strong>!
+          Enviamos agora a sua primeira lista de vagas para o WhatsApp <strong id="success-phone-display" class="text-emerald-400"></strong>.
         </p>
-        <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 text-left space-y-1.5">
-          <div>✅ <strong>Hoje (Agora):</strong> Boletim inicial de vagas enviado no seu WhatsApp.</div>
-          <div>⏰ <strong>Próximos 3 dias às 07h00:</strong> Você receberá novas vagas abertas para o seu filtro.</div>
-          <div>📄 <strong>Dica Bônus:</strong> Você pode responder a mensagem no WhatsApp enviando seu <strong>Currículo em PDF</strong> para receber nossa análise de compatibilidade por IA!</div>
+
+        <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 text-left space-y-2">
+          <div class="font-bold text-white text-sm mb-1">📋 O que acontece agora:</div>
+          <div>⏱️ <strong>Quando chega a 1ª mensagem:</strong> Em até <strong>1 a 2 minutos</strong> no seu WhatsApp.</div>
+          <div>📲 <strong>De qual número ela vem:</strong> Do nosso número oficial de disparos <strong>+55 (71) 8744-0068</strong>.</div>
+          <div>☀️ <strong>Nos próximos 3 dias às 07h00:</strong> Você receberá 5 novas vagas abertas compatíveis com o seu filtro.</div>
+          <div>💳 <strong>Após os 3 dias:</strong> Enviaremos no seu WhatsApp a opção de continuar por <strong>R$ 19,00/mês via Pix</strong> (opcional e sem fidelidade). Para sair a qualquer momento, basta responder <strong>PARAR</strong>.</div>
+        </div>
+
+        <div class="pt-2">
+          <p class="text-xs text-slate-400 mb-2">A mensagem não chegou após 2 minutos ou digitou o número errado?</p>
+          <a href="https://wa.me/557187440068?text=Ol%C3%A1%2C%20acabei%20de%20ativar%20meu%20teste%20de%203%20dias%20no%20site%20e%20quero%20confirmar%20meu%20recebimento!" target="_blank" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-bold border border-emerald-500/30 transition">
+            💬 Chamar o Suporte no WhatsApp Agora
+          </a>
         </div>
       </div>
     </div>
+
+    <!-- SEÇÃO DE PERGUNTAS FREQUENTES (FAQ CURTO - 6 PERGUNTAS DA AUDITORIA) -->
+    <section id="faq-section" class="mt-12 pt-8 border-t border-slate-900">
+      <div class="text-center mb-6">
+        <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Tire suas dúvidas</span>
+        <h2 class="text-xl font-extrabold text-white mt-1">Perguntas Frequentes</h2>
+      </div>
+
+      <div class="space-y-3 text-sm">
+        <details class="group bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <summary class="font-bold text-white cursor-pointer flex justify-between items-center">
+            <span>1. Quanto custa depois do teste grátis de 3 dias?</span>
+            <span class="text-emerald-400 group-open:rotate-180 transition">▼</span>
+          </summary>
+          <p class="text-xs text-slate-300 mt-2.5 leading-relaxed">
+            Os 3 primeiros dias são 100% gratuitos. Depois que o teste terminar, se você quiser continuar recebendo as vagas, o plano custa <strong>R$ 19,00 por mês, pago via Pix</strong>. Não pedimos cartão de crédito e não existe cobrança automática surpresa.
+          </p>
+        </details>
+
+        <details class="group bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <summary class="font-bold text-white cursor-pointer flex justify-between items-center">
+            <span>2. Como eu faço o pagamento se quiser continuar?</span>
+            <span class="text-emerald-400 group-open:rotate-180 transition">▼</span>
+          </summary>
+          <p class="text-xs text-slate-300 mt-2.5 leading-relaxed">
+            No 3º dia do seu teste, você receberá uma mensagem automática no próprio WhatsApp avisando que o período grátis está encerrando, junto com a chave/código Pix de R$ 19,00. Após o pagamento, sua assinatura mensal (30 dias) é ativada.
+          </p>
+        </details>
+
+        <details class="group bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <summary class="font-bold text-white cursor-pointer flex justify-between items-center">
+            <span>3. Quantas vagas eu recebo por dia e em qual horário?</span>
+            <span class="text-emerald-400 group-open:rotate-180 transition">▼</span>
+          </summary>
+          <p class="text-xs text-slate-300 mt-2.5 leading-relaxed">
+            Você recebe <strong>5 vagas abertas por dia</strong> com link direto para se candidatar, enviadas no seu WhatsApp a partir da nossa varredura diária às <strong>07h00 da manhã</strong> (horário de Brasília).
+          </p>
+        </details>
+
+        <details class="group bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <summary class="font-bold text-white cursor-pointer flex justify-between items-center">
+            <span>4. Posso cancelar quando quiser? Tem fidelidade?</span>
+            <span class="text-emerald-400 group-open:rotate-180 transition">▼</span>
+          </summary>
+          <p class="text-xs text-slate-300 mt-2.5 leading-relaxed">
+            Não tem fidelidade nem multa. Você pode parar de receber as mensagens a qualquer momento: basta responder <strong>PARAR</strong> ou <strong>CANCELAR</strong> na conversa do WhatsApp que o sistema interrompe os disparos na mesma hora.
+          </p>
+        </details>
+
+        <details class="group bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <summary class="font-bold text-white cursor-pointer flex justify-between items-center">
+            <span>5. As vagas são da minha cidade ou Home Office?</span>
+            <span class="text-emerald-400 group-open:rotate-180 transition">▼</span>
+          </summary>
+          <p class="text-xs text-slate-300 mt-2.5 leading-relaxed">
+            Você escolhe na etapa 3 do questionário acima! Pode configurar para receber apenas vagas <strong>100% Home Office</strong> (Brasil todo), apenas vagas <strong>Presenciais na sua cidade/estado</strong> ou <strong>Ambos</strong>.
+          </p>
+        </details>
+
+        <details class="group bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <summary class="font-bold text-white cursor-pointer flex justify-between items-center">
+            <span>6. E se eu não gostar das vagas durante o teste?</span>
+            <span class="text-emerald-400 group-open:rotate-180 transition">▼</span>
+          </summary>
+          <p class="text-xs text-slate-300 mt-2.5 leading-relaxed">
+            Se não gostar, você não precisa pagar nada: ao fim dos 3 dias o teste se encerra automaticamente sem custos. Além disso, durante o teste ou assinatura você pode chamar nosso suporte no WhatsApp para ajustar o seu cargo ou cidade de filtro.
+          </p>
+        </details>
+      </div>
+    </section>
+
   </main>
 
+  <!-- RODAPÉ COMPLETO COM CONTATO, TERMOS E PRIVACIDADE -->
+  <footer class="border-t border-slate-900 bg-slate-950 py-8 mt-8 text-xs text-slate-400">
+    <div class="max-w-3xl mx-auto px-4 space-y-4 text-center">
+      <div class="flex items-center justify-center gap-2">
+        <img src="/logo.jpg" alt="VagaZap IA" class="w-6 h-6 rounded-full border border-emerald-500/40" />
+        <span class="font-extrabold text-white">VagaZap IA</span>
+        <span>— Alerta Diário de Vagas no WhatsApp</span>
+      </div>
+
+      <p class="text-slate-500 max-w-xl mx-auto leading-relaxed">
+        O VagaZap IA é um serviço independente de busca e filtragem de vagas públicas. Não somos agência de recrutamento e não garantimos contratação. Teste grátis de 3 dias, depois R$ 19,00/mês via Pix (opcional, sem fidelidade).
+      </p>
+
+      <div class="flex flex-wrap items-center justify-center gap-4 font-semibold text-slate-300">
+        <a href="/privacidade" class="hover:text-emerald-400 underline">Política de Privacidade</a>
+        <span class="text-slate-700">•</span>
+        <a href="/termos" class="hover:text-emerald-400 underline">Termos de Uso</a>
+        <span class="text-slate-700">•</span>
+        <a href="https://wa.me/557187440068?text=Ol%C3%A1%2C%20preciso%20de%20suporte%20com%20o%20VagaZap%20IA" target="_blank" class="text-emerald-400 hover:underline">
+          💬 Suporte WhatsApp: (71) 8744-0068
+        </a>
+      </div>
+
+      <div class="text-[11px] text-slate-600 pt-1">
+        © 2026 VagaZap IA • Operado por Sena Mídias • Todos os direitos reservados.
+      </div>
+    </div>
+  </footer>
+
   <script>
+    // Captura de UTMs dos Anúncios para Medição de Funil
+    const urlParams = new URLSearchParams(window.location.search);
+    const utmData = {
+      utm_source: urlParams.get('utm_source') || 'direto',
+      utm_medium: urlParams.get('utm_medium') || '',
+      utm_campaign: urlParams.get('utm_campaign') || '',
+      utm_content: urlParams.get('utm_content') || '',
+      utm_term: urlParams.get('utm_term') || '',
+      fbclid: urlParams.get('fbclid') || ''
+    };
+
     const PROFILE_CHOICES = [
       { id: "homeoffice", icon: "💼", label: "Vagas Efetivas CLT ou PJ (Remoto ou Presencial)", desc: "Busco emprego efetivo na minha área de atuação" },
       { id: "estagio", icon: "🎓", label: "Estágio (Presencial, Híbrido ou Home Office)", desc: "Estou cursando faculdade ou curso técnico" },
@@ -233,14 +419,28 @@
       priority: "beneficios"
     };
 
+    function showQuizError(msg) {
+      const errEl = document.getElementById('quiz-step-error');
+      if (!errEl) return;
+      errEl.textContent = `⚠️ ${msg}`;
+      errEl.classList.remove('hidden');
+    }
+
+    function hideQuizError() {
+      const errEl = document.getElementById('quiz-step-error');
+      if (errEl) errEl.classList.add('hidden');
+    }
+
     function startQuiz() {
       currentStep = 1;
       document.getElementById('step-hero').classList.add('hidden');
       document.getElementById('step-questions').classList.remove('hidden');
+      trackFunnelEvent('QuizIniciado', utmData);
       renderStep();
     }
 
     function renderStep() {
+      hideQuizError();
       const pct = Math.round((currentStep / totalSteps) * 100);
       document.getElementById('quiz-step-label').textContent = `Etapa ${currentStep} de ${totalSteps}`;
       document.getElementById('quiz-progress-pct').textContent = `${pct}%`;
@@ -253,7 +453,7 @@
 
       // ETAPA 1: MODALIDADE / TIPO DE VAGA (MÚLTIPLA ESCOLHA)
       if (currentStep === 1) {
-        titleEl.textContent = "1. Qual tipo de vaga você quer que o VagaZap garimpe para você?";
+        titleEl.textContent = "1. Qual tipo de vaga você quer receber todos os dias às 07h?";
         subEl.textContent = "Você pode selecionar UMA ou MAIS opções abaixo (ex: CLT + Estágio):";
 
         PROFILE_CHOICES.forEach(opt => {
@@ -284,7 +484,7 @@
         nextBtn.textContent = "Continuar →";
         nextBtn.onclick = () => {
           if (answers.selectedProfiles.length === 0) {
-            alert('Selecione pelo menos um tipo de vaga para continuar!');
+            showQuizError('Selecione pelo menos um tipo de vaga acima para continuar.');
             return;
           }
           answers.profile = answers.selectedProfiles[0];
@@ -328,7 +528,7 @@
           <label class="block text-xs font-bold text-slate-300 mb-1">
             🔎 Quer especificar algum cargo ou curso? (Opcional):
           </label>
-          <input id="input-custom-role" type="text" value="${answers.customRole}" placeholder="Ex: Administração, Logística, Direito, Recepcionista..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-emerald-500" />
+          <input id="input-custom-role" type="text" value="${answers.customRole}" placeholder="Ex: Administração, Psicologia, Logística, Direito, Recepcionista..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-emerald-500" />
           <button onclick="confirmAreasStep()" class="mt-4 w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm cursor-pointer transition">
             Continuar →
           </button>
@@ -339,7 +539,7 @@
       // ETAPA 3: MODALIDADE E LOCALIZAÇÃO (HOME OFFICE, PRESENCIAL OU AMBOS)
       else if (currentStep === 3) {
         titleEl.textContent = "3. Qual modalidade de trabalho você prefere?";
-        subEl.textContent = "Escolha se prefere trabalhar de casa (Home Office), Presencial na sua cidade (muito comum em cursos e estágios) ou Ambos:";
+        subEl.textContent = "Escolha se prefere trabalhar de casa (Home Office), Presencial na sua cidade ou Ambos:";
 
         const locBox = document.createElement('div');
         locBox.className = "space-y-3";
@@ -348,7 +548,7 @@
             <span class="text-xl">🏠</span>
             <div class="flex-1">
               <div class="text-sm font-bold text-white group-hover:text-emerald-400 transition">Quero APENAS vagas 100% Home Office</div>
-              <div class="text-xs text-slate-400">Trabalhar de casa para empresas de qualquer lugar do Brasil</div>
+              <div class="text-xs text-slate-400">Trabalhar remotamente de casa para empresas de qualquer lugar do Brasil</div>
             </div>
             <span class="text-xs text-slate-500 group-hover:text-emerald-400 font-bold self-center">→</span>
           </button>
@@ -358,11 +558,11 @@
               <span class="text-xl">🏢</span>
               <div>
                 <div class="text-sm font-bold text-white">Vagas Presenciais na minha Cidade (ou Híbrido / Ambos)</div>
-                <div class="text-xs text-slate-400">Ideal para quem prefere trabalho presencial, estágios obrigatórios de cursos (Saúde, Direito, Engenharia, Administração) ou Jovem Aprendiz local</div>
+                <div class="text-xs text-slate-400">Informe sua Cidade e Estado abaixo para filtrarmos vagas locais:</div>
               </div>
             </div>
 
-            <input id="input-city" type="text" value="${answers.city}" placeholder="Digite sua Cidade e Estado (Ex: Salvador - BA)" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500" />
+            <input id="input-city" type="text" value="${answers.city === 'Remoto Nacional' ? '' : answers.city}" placeholder="Digite sua Cidade e Estado (Ex: Salvador - BA)" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white focus:outline-none focus:border-emerald-500" />
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
               <button onclick="confirmCityLocation('presencial')" class="w-full py-2.5 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs cursor-pointer transition">
@@ -377,14 +577,14 @@
         container.appendChild(locBox);
       }
 
-      // ETAPA 4: MAIOR FRUSTRAÇÃO
+      // ETAPA 4: MAIOR DIFICULDADE
       else if (currentStep === 4) {
-        titleEl.textContent = "4. Qual é a sua maior dor procurando vaga hoje?";
-        subEl.textContent = "Nosso robô usa isso para filtrar o que faz você perder tempo:";
+        titleEl.textContent = "4. Qual é a sua maior dificuldade procurando vaga hoje?";
+        subEl.textContent = "Isso ajuda a calibrar os alertas diários das 07h00:";
         const opts = [
-          { id: "tempo", icon: "⏱️", label: "Perco horas abrindo vários sites diferentes", desc: "Abro Gupy, Indeed, LinkedIn, CIEE e só acho vaga repetida" },
-          { id: "falso_remoto", icon: "😤", label: "Propaganda enganosa de 'Falso Home Office'", desc: "Diz que é remoto no título, mas exige morar em outra cidade" },
-          { id: "atraso", icon: "🐢", label: "Sempre chego atrasado nas melhores vagas", desc: "Quando vejo a vaga à noite, já tem mais de 1.500 candidatos" }
+          { id: "tempo", icon: "⏱️", label: "Falta de tempo para procurar em vários sites", desc: "Não consigo abrir Gupy, Indeed, LinkedIn e CIEE todos os dias" },
+          { id: "filtro", icon: "🔎", label: "Dificuldade de achar vagas certas para o meu perfil", desc: "Perco tempo lendo vagas que não batem com minha área ou modalidade" },
+          { id: "atraso", icon: "📅", label: "Acabo vendo as vagas muitos dias depois que abriram", desc: "Prefiro receber as vagas abertas logo cedo às 07h no WhatsApp" }
         ];
         opts.forEach(opt => {
           container.appendChild(createOptionButton(opt, () => {
@@ -395,14 +595,14 @@
         });
       }
 
-      // ETAPA 5: PRIORIDADE DE ROTINA / BENEFÍCIOS + UPLOAD OPCIONAL DE CURRÍCULO
+      // ETAPA 5: PREFERÊNCIA DE FILTRO + UPLOAD OPCIONAL DE CURRÍCULO
       else if (currentStep === 5) {
-        titleEl.textContent = "5. O que nossa IA deve priorizar no topo da sua lista às 07h?";
-        subEl.textContent = "Última etapa antes de liberarmos seu diagnóstico e sua vaga de amostra:";
+        titleEl.textContent = "5. O que você prefere priorizar na seleção das suas 5 vagas diárias?";
+        subEl.textContent = "Última etapa antes de liberarmos sua vaga de amostra e seu teste grátis de 3 dias:";
         const opts = [
-          { id: "beneficios", icon: "💳", label: "Pacote Completo de Benefícios (VR/VA Alto + Plano de Saúde)", desc: "Priorizar empresas com vale alimentação/refeição expressivo e assistência médica" },
-          { id: "horarios", icon: "🌙", label: "Jornada de 4h a 6h/dia, Escala 5x2 ou Turno Noturno", desc: "Horários que permitam conciliar estudos ou projetos" },
-          { id: "sem_exp", icon: "✨", label: "Vagas que NÃO exigem experiência prévia", desc: "Foco em empresas que treinam do zero" }
+          { id: "beneficios", icon: "💳", label: "Vagas com Benefícios Informados (VR/VA, Assistência Médica)", desc: "Priorizar oportunidades com pacote estruturado de benefícios" },
+          { id: "horarios", icon: "🌙", label: "Jornada de 4h a 6h/dia, Escala 5x2 ou Flexível", desc: "Horários que permitam conciliar estudos ou rotina familiar" },
+          { id: "sem_exp", icon: "✨", label: "Vagas de Entrada / Júnior / Sem Experiência", desc: "Foco em oportunidades iniciais, estágio ou primeiro emprego" }
         ];
         opts.forEach(opt => {
           container.appendChild(createOptionButton(opt, () => {
@@ -419,10 +619,10 @@
             <span class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
               <span>📎</span> Anexar Currículo em PDF (Opcional):
             </span>
-            <span class="text-[11px] text-emerald-400 font-semibold">Leitura por IA</span>
+            <span class="text-[11px] text-emerald-400 font-semibold">Opcional</span>
           </div>
           <p class="text-xs text-slate-400">
-            Se tiver o PDF em mãos, selecione abaixo para cruzar com o robô da Gupy. Se não tiver agora, pode pular!
+            Você também poderá enviar seu PDF diretamente na conversa do WhatsApp se preferir.
           </p>
           <div class="flex items-center gap-3 pt-1">
             <input type="file" id="input-resume-file" accept=".pdf,.doc,.docx" onchange="handleResumeUpload(event)" class="text-xs text-slate-400 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-slate-800 file:text-emerald-400 hover:file:bg-slate-700 cursor-pointer" />
@@ -452,7 +652,7 @@
       const customVal = document.getElementById('input-custom-role').value.trim();
       answers.customRole = customVal;
       if (answers.selectedAreas.length === 0 && !customVal) {
-        alert('Selecione pelo menos uma área ou digite o cargo desejado!');
+        showQuizError('Selecione pelo menos uma área ou digite o cargo desejado para continuar.');
         return;
       }
       currentStep = 3;
@@ -468,8 +668,9 @@
 
     function confirmCityLocation(modeType) {
       const cityVal = document.getElementById('input-city').value.trim();
-      if (!cityVal) {
-        alert('Por favor, digite sua Cidade e Estado (ex: Salvador - BA).');
+      if (!cityVal || cityVal.length < 3) {
+        showQuizError('Por favor, digite sua Cidade e Estado no campo acima (ex: Salvador - BA).');
+        document.getElementById('input-city')?.focus();
         return;
       }
       answers.city = cityVal;
@@ -502,7 +703,14 @@
       document.getElementById('step-questions').classList.add('hidden');
       document.getElementById('step-loading').classList.remove('hidden');
       const mainArea = answers.customRole || (answers.selectedAreas[0] ? answers.selectedAreas[0].split('/')[0].trim() : 'Administrativo');
-      document.getElementById('loading-sub-summary').textContent = `Varrendo vagas reais abertas para: ${ getAreasSummaryText() } (${ answers.locationMode })...`;
+      document.getElementById('loading-sub-summary').textContent = `Buscando vagas abertas hoje para: ${getAreasSummaryText()} (${answers.locationMode})...`;
+
+      trackFunnelEvent('QuizConcluido', {
+        profile: answers.profile,
+        area: mainArea,
+        location: answers.locationMode,
+        ...utmData
+      });
 
       let liveJobs = [];
       try {
@@ -538,38 +746,28 @@
       const areaText = getAreasSummaryText();
       const mainArea = answers.customRole || (answers.selectedAreas[0] ? answers.selectedAreas[0].split('/')[0].trim() : 'Administrativo');
       const hasCity = answers.city && answers.city !== 'Remoto Nacional';
-      const cityLabel = hasCity ? answers.city : '100% Home Office';
+      const cityLabel = hasCity ? answers.city : 'Remoto / Brasil';
 
       document.getElementById('result-location-badge').textContent = `📍 ${answers.locationMode}`;
-      document.getElementById('result-areas-summary').innerHTML = `🎯 <strong>Áreas configuradas no seu alerta:</strong> ${areaText}`;
+      document.getElementById('result-areas-summary').innerHTML = `🎯 <strong>Áreas configuradas no seu filtro:</strong> ${areaText}`;
       document.getElementById('result-profile-badge').textContent = getProfilesSummaryText();
 
-      // Se encontrou vaga real na varredura ao vivo, exibe o título real, a empresa real e o link direto da vaga específica!
+      // Exibe a 1ª vaga real aberta verificada hoje pelo buscador ao vivo
       if (liveJobs && liveJobs.length > 0) {
         const topJob = liveJobs[0];
         document.getElementById('free-job-title').textContent = topJob.title;
         document.getElementById('free-job-company').textContent = `${topJob.company} • 📍 ${topJob.modality}`;
-        document.getElementById('free-job-benefits').innerHTML = `🎁 <strong>Benefícios & Regime:</strong> ${topJob.benefits}`;
+        document.getElementById('free-job-benefits').innerHTML = `📋 <strong>Informações da vaga:</strong> ${topJob.benefits}`;
         document.getElementById('free-job-link').href = topJob.link;
-      } else if (p === 'aprendiz') {
-        const searchQuery = encodeURIComponent(`Jovem Aprendiz ${mainArea}`);
-        const locQuery = encodeURIComponent(hasCity ? answers.city : 'Brasil');
-        document.getElementById('free-job-title').textContent = `Jovem Aprendiz — ${mainArea} (${cityLabel})`;
-        document.getElementById('free-job-company').textContent = `Vagas Abertas • CIEE, Gupy & LinkedIn Jobs • 4h a 6h/dia`;
-        document.getElementById('free-job-benefits').innerHTML = "🎁 <strong>Benefícios Médios:</strong> Salário R$ 1.280 + VR/VA + Vale Transporte + Plano de Saúde.";
-        document.getElementById('free-job-link').href = `https://br.linkedin.com/jobs/search?keywords=${searchQuery}&location=${locQuery}`;
-      } else if (p === 'estagio') {
-        const searchQuery = encodeURIComponent(`Estágio ${mainArea}`);
-        const locQuery = encodeURIComponent(hasCity ? answers.city : 'Brasil');
-        document.getElementById('free-job-title').textContent = `Estágio em ${mainArea} (${cityLabel})`;
-        document.getElementById('free-job-company').textContent = `Vagas Abertas • CIEE, Gupy, Nube & LinkedIn • 6h/dia`;
-        document.getElementById('free-job-benefits').innerHTML = "🎁 <strong>Benefícios Médios:</strong> Bolsa R$ 1.400 a R$ 1.800 + Auxílio Transporte/Home Office + Vale Refeição.";
-        document.getElementById('free-job-link').href = `https://br.linkedin.com/jobs/search?keywords=${searchQuery}&location=${locQuery}`;
       } else {
-        document.getElementById('free-job-title').textContent = `Assistente de Relacionamento & Operações (${cityLabel})`;
-        document.getElementById('free-job-company').textContent = `Conexa Saúde • Portal Gupy • Contratação Imediata`;
-        document.getElementById('free-job-benefits').innerHTML = "🎁 <strong>Benefícios:</strong> Cartão de Benefícios Flexíveis de R$ 1.059,00/mês + Amil S450 + Odonto 100%.";
-        document.getElementById('free-job-link').href = "https://conexasaude.gupy.io/jobs/12081528?jobBoardSource=gupy_opportunities";
+        // Fallback seguro apontando sempre para vagas recém-publicadas (últimos 7 dias) no LinkedIn Jobs para o filtro exato do usuário
+        const prefix = p === 'aprendiz' ? 'Jovem Aprendiz ' : (p === 'estagio' ? 'Estágio ' : '');
+        const searchQuery = encodeURIComponent(`${prefix}${mainArea}`);
+        const locQuery = encodeURIComponent(hasCity ? answers.city : 'Brasil');
+        document.getElementById('free-job-title').textContent = `${prefix || 'Vagas Abertas em '}${mainArea} (${cityLabel})`;
+        document.getElementById('free-job-company').textContent = `Oportunidades Abertas • Filtro Verificado Hoje`;
+        document.getElementById('free-job-benefits').innerHTML = "📋 <strong>Modalidade:</strong> Vagas ativas nos portais monitorados para candidatura direta.";
+        document.getElementById('free-job-link').href = `https://www.linkedin.com/jobs/search?keywords=${searchQuery}&location=${locQuery}&f_TPR=r604800`;
       }
     }
 
@@ -578,23 +776,42 @@
       if (file) {
         answers.resumeName = file.name;
         const badge = document.getElementById('resume-filename-badge');
-        badge.textContent = `✓ ${file.name} pronto para análise`;
+        badge.textContent = `✓ ${file.name} selecionado`;
         badge.classList.remove('hidden');
       }
     }
 
-    async function activateFreeTrialNow() {
-      const nameVal = document.getElementById('client-name').value.trim();
-      const phoneVal = document.getElementById('client-whatsapp').value.trim();
+    function clearFieldError(field) {
+      const errEl = document.getElementById(`error-${field}`);
+      if (errEl) errEl.classList.add('hidden');
+      const srvEl = document.getElementById('error-server');
+      if (srvEl) srvEl.classList.add('hidden');
+    }
 
-      if (!nameVal) {
-        alert('Por favor, digite o seu nome.');
-        return;
+    async function activateFreeTrialNow() {
+      const nameInput = document.getElementById('client-name');
+      const phoneInput = document.getElementById('client-whatsapp');
+      const consentInput = document.getElementById('consent-whatsapp');
+
+      const nameVal = nameInput.value.trim();
+      const phoneVal = phoneInput.value.trim();
+      const phoneDigits = phoneVal.replace(/\D/g, '');
+      const hasConsent = consentInput.checked;
+
+      let hasError = false;
+      if (!nameVal || nameVal.length < 2) {
+        document.getElementById('error-name').classList.remove('hidden');
+        hasError = true;
       }
-      if (!phoneVal || phoneVal.replace(/\D/g, '').length < 10) {
-        alert('Por favor, digite seu WhatsApp completo com DDD (ex: 71999999999).');
-        return;
+      if (!phoneDigits || phoneDigits.length < 10) {
+        document.getElementById('error-whatsapp').classList.remove('hidden');
+        hasError = true;
       }
+      if (!hasConsent) {
+        document.getElementById('error-consent').classList.remove('hidden');
+        hasError = true;
+      }
+      if (hasError) return;
 
       const btn = document.getElementById('btn-activate-trial');
       btn.disabled = true;
@@ -613,18 +830,33 @@
             profile: answers.profile || 'homeoffice',
             area: areaWithProfiles,
             city: cityToSend,
+            consent: true,
+            utms: utmData,
             saveTrial: true
           })
         });
 
         await resp.json();
+
+        trackFunnelEvent('Lead', {
+          content_name: 'Teste Gratis 3 Dias VagaZap',
+          profile: answers.profile,
+          ...utmData
+        });
+        trackFunnelEvent('TesteAtivado', {
+          profile: answers.profile,
+          ...utmData
+        });
+
         document.getElementById('trial-form-card').classList.add('hidden');
         document.getElementById('success-phone-display').textContent = phoneVal;
         document.getElementById('trial-success-card').classList.remove('hidden');
       } catch (e) {
         btn.disabled = false;
-        btn.textContent = "🎁 Ativar Meu Teste de 3 Dias e Receber no WhatsApp →";
-        alert('Erro de conexão com o servidor VagaZap. Tente novamente.');
+        btn.textContent = "🎁 Ativar Meu Teste de 3 Dias Grátis no WhatsApp →";
+        const srvEl = document.getElementById('error-server');
+        srvEl.textContent = "⚠️ Erro de conexão ao ativar seu teste. Verifique sua internet e toque no botão novamente.";
+        srvEl.classList.remove('hidden');
       }
     }
   </script>

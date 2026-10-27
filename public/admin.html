@@ -177,7 +177,8 @@
               <th class="py-2 pr-3">Área & Cidade</th>
               <th class="py-2 pr-3">Plano</th>
               <th class="py-2 pr-3">Valor Pago</th>
-              <th class="py-2">Vencimento</th>
+              <th class="py-2 pr-3">Vencimento</th>
+              <th class="py-2 text-right">Ações (Fluxo Pix R$ 19)</th>
             </tr>
           </thead>
           <tbody id="subs-tbody" class="divide-y divide-slate-800"></tbody>
@@ -250,7 +251,7 @@
       // Assinantes e Testadores Ativos
       const tbody = document.getElementById('subs-tbody');
       if (!data.subscribers || data.subscribers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="py-4 text-center text-slate-500">Nenhum assinante ou testador ativo ainda.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="py-4 text-center text-slate-500">Nenhum assinante ou testador ativo ainda.</td></tr>';
         return;
       }
       tbody.innerHTML = data.subscribers.map(s => `
@@ -261,9 +262,37 @@
           <td class="py-2.5 pr-3 text-slate-300">${s.area || s.profile}</td>
           <td class="py-2.5 pr-3">${s.planName}</td>
           <td class="py-2.5 pr-3 font-bold text-emerald-400">R$ ${Number(s.amount).toFixed(2).replace('.', ',')}</td>
-          <td class="py-2.5 text-slate-400 font-semibold">${s.expiresAt}</td>
+          <td class="py-2.5 pr-3 text-slate-400 font-semibold">${s.expiresAt}</td>
+          <td class="py-2.5 text-right space-x-1 whitespace-nowrap">
+            <button onclick="sendPixOffer('${s.id}')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-[11px] cursor-pointer transition">
+              💳 Cobrar R$ 19
+            </button>
+            <button onclick="activatePaidSub('${s.id}')" class="px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-[11px] cursor-pointer transition">
+              ✅ Ativar 30d (R$ 19)
+            </button>
+          </td>
         </tr>
       `).join('');
+    }
+
+    async function sendPixOffer(subscriberId) {
+      await fetch('/api/admin/send-pix-offer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscriberId })
+      });
+      alert('Mensagem com cobrança Pix de R$ 19,00 enviada no WhatsApp do assinante!');
+    }
+
+    async function activatePaidSub(subscriberId) {
+      if (!confirm('Confirmar pagamento de R$ 19,00 e liberar 30 dias para este assinante?')) return;
+      await fetch('/api/admin/activate-paid', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscriberId })
+      });
+      alert('Assinatura de 30 dias ativada e mensagem de confirmação enviada no WhatsApp!');
+      loadOverview();
     }
 
     async function approveTrialLead(paymentId) {

@@ -4,6 +4,14 @@ const path = require('path');
 const crypto = require('crypto');
 const { execFile } = require('child_process');
 
+// Proteção global para o servidor nunca cair por oscilação de rede no socket do WhatsApp
+process.on('uncaughtException', (err) => {
+  console.error('[Proteção Anti-Queda] Exceção capturada:', err.message);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[Proteção Anti-Queda] Rejeição capturada:', reason?.message || reason);
+});
+
 // Carrega variáveis do arquivo .env
 const envPath = path.join(__dirname, '.env');
 function loadEnv() {
@@ -117,7 +125,7 @@ async function initNativeWhatsApp() {
     });
 
     // ========================================================================
-    // RESPOSTA AUTOMÁTICA NO WHATSAPP (CURRÍCULO PDF, SCRIPTS E CANCELAR)
+    // RESPOSTA AUTOMÁTICA NO WHATSAPP (CURRÍCULO, SCRIPTS, PIX, SUPORTE, PARAR)
     // ========================================================================
     waSock.ev.on('messages.upsert', async ({ messages, type }) => {
       if (type !== 'notify') return;
@@ -131,6 +139,7 @@ async function initNativeWhatsApp() {
             m.message.conversation ||
             m.message.extendedTextMessage?.text ||
             m.message.documentWithCaptionMessage?.message?.documentMessage?.caption ||
+            m.message.imageMessage?.caption ||
             ''
           ).trim();
 
@@ -146,54 +155,82 @@ async function initNativeWhatsApp() {
           const userArea = foundSub?.area ? foundSub.area.split('|')[0].trim() : 'sua área de atuação';
           const userName = foundSub?.name || 'Candidato(a)';
 
-          // 1. Se a pessoa enviou um currículo em PDF / Word no WhatsApp:
-          if (docMsg) {
-            const fileName = docMsg.fileName || 'Currículo.pdf';
-            const replyResume =
-              `🤖 *ANÁLISE IA ANTI-GUPY CONCLUÍDA!* 📄\n\n` +
-              `Olá, *${userName}*! Recebi o seu arquivo *${fileName}* e cruzei com os algoritmos de triagem (Gupy, CIEE, Kenoby e LinkedIn) para *${userArea}*.\n\n` +
-              `📊 *Diagnóstico Atual do Currículo:*\n` +
-              `• *Nota ATS Atual:* 68/100 (Muitas vagas retêm currículos que não repetem os termos exatos da descrição).\n` +
-              `• *Potencial após ajuste:* *96% de Compatibilidade (Match)*!\n\n` +
-              `✅ *PASSO 1: Copie e cole este Resumo Profissional no topo do seu currículo e na Gupy:*\n` +
-              `_"Profissional com foco em ${userArea}, com facilidade de aprendizado rápido, comunicação clara, organização de rotinas, atendimento humanizado, resolução de demandas com agilidade e domínio de ferramentas digitais. Disponibilidade imediata e alta adaptabilidade para cumprimento de metas e indicadores."_\n\n` +
-              `🔑 *PASSO 2: Palavras-Chave Obrigatórias (Adicione na seção Habilidades da Gupy/Currículo):*\n` +
-              `• ${userArea} • Comunicação Assertiva • Pacote Office / Ferramentas Digitais • Gestão do Tempo • Resolução de Problemas • Atendimento ao Cliente • Organização de Processos • Trabalho em Equipe.\n\n` +
-              `⚠️ *PASSO 3: Regra de Ouro Anti-Robô:*\n` +
-              `Evite currículos feitos no Canva com 2 colunas ou fotos, pois o leitor automático da Gupy embaralha o texto. Use formato de 1 coluna simples!\n\n` +
-              `💡 _Sempre que quiser os textos prontos para chamar recrutadores, digite *SCRIPTS* aqui na conversa!_`;
-
-            await waSock.sendMessage(senderJid, { text: replyResume });
-            continue;
-          }
-
           const upper = textMsg.toUpperCase();
 
-          // 2. Se a pessoa digitou SCRIPTS:
-          if (upper === 'SCRIPTS' || upper === 'SCRIPT') {
-            const replyScripts =
-              `🎯 *KIT DE SCRIPTS PARA ABORDAR RECRUTADORES (VAGAZAP IA)* 🎯\n\n` +
-              `Use estes modelos prontos ao se candidatar nas vagas que enviamos às 07h00:\n\n` +
-              `1️⃣ *Script para chamar o Recrutador no LinkedIn após se inscrever na Gupy:*\n` +
-              `_"Olá [Nome do Recrutador], tudo bem? Acabei de realizar minha inscrição na vaga de *${userArea}* pela plataforma oficial, mas como tenho grande admiração pela empresa e aderência aos requisitos da vaga, quis me apresentar brevemente por aqui também. Meu currículo está em anexo caso queira dar uma olhada rápida. Muito obrigado(a)!"_\n\n` +
-              `2️⃣ *Script para enviar Currículo por WhatsApp / E-mail Comercial:*\n` +
-              `_"Bom dia! Vi a oportunidade aberta para *${userArea}* e gostaria de encaminhar meu currículo atualizado. Tenho disponibilidade imediata, facilidade com ferramentas digitais e foco em resultados. Fico à disposição para uma conversa rápida!"_\n\n` +
-              `3️⃣ *Script para Destacar Falta de Experiência (Estágio / 1º Emprego):*\n` +
-              `_"Olá! Estou me candidatando à vaga de *${userArea}*. Mesmo no início da minha trajetória, tenho rápida curva de aprendizado, dedicação total aos estudos na área e muita vontade de crescer junto à equipe. Agradeço desde já pela atenção!"_`;
-
-            await waSock.sendMessage(senderJid, { text: replyScripts });
-            continue;
-          }
-
-          // 3. Se a pessoa digitou CANCELAR ou PARAR:
-          if (upper === 'CANCELAR' || upper === 'PARAR') {
+          // 1. Se a pessoa digitou CANCELAR, PARAR ou SAIR (Bloqueio Imediato):
+          if (upper === 'CANCELAR' || upper === 'PARAR' || upper === 'SAIR') {
             if (foundSub) {
               foundSub.status = 'canceled';
               writeJson(SUBS_FILE, subs);
             }
             await waSock.sendMessage(senderJid, {
-              text: `✅ *Assinatura Pausada/Cancelada com sucesso.*\nVocê não receberá novos disparos automáticos. Caso queira reativar seus alertas no futuro, basta nos chamar por aqui!`
+              text: `✅ *Envios cancelados com sucesso.*\nVocê não receberá novos disparos automáticos do VagaZap IA.\n\nCaso queira reativar seus alertas no futuro, basta nos chamar por aqui!`
             });
+            continue;
+          }
+
+          // 2. Se a pessoa pediu EXCLUIR DADOS (Direito LGPD):
+          if (upper === 'EXCLUIR DADOS' || upper === 'EXCLUIR') {
+            const filtered = subs.filter(s => !String(s.whatsapp || '').replace(/\D/g, '').endsWith(senderDigits));
+            writeJson(SUBS_FILE, filtered);
+            await waSock.sendMessage(senderJid, {
+              text: `🔒 *Seus dados foram excluídos da nossa base conforme a LGPD.*\nVocê não receberá mais nenhuma mensagem.`
+            });
+            continue;
+          }
+
+          // 3. Se a pessoa pediu PIX, ASSINAR ou RENOVAR (Fluxo de Cobrança R$ 19/mês):
+          if (upper === 'PIX' || upper === 'ASSINAR' || upper === 'RENOVAR') {
+            const pixMsg = await buildTrialEndPixMessage(foundSub || { name: userName, whatsapp: senderDigits });
+            await waSock.sendMessage(senderJid, { text: pixMsg });
+            continue;
+          }
+
+          // 4. Se a pessoa pediu SUPORTE ou AJUDA:
+          if (upper === 'SUPORTE' || upper === 'AJUDA') {
+            await waSock.sendMessage(senderJid, {
+              text:
+                `💬 *SUPORTE VAGAZAP IA*\n\n` +
+                `Olá, *${userName}*! Como podemos ajudar?\n` +
+                `• Para alterar sua cidade ou área de filtro, escreva aqui qual cargo e cidade deseja.\n` +
+                `• Para assinar ou renovar o plano mensal (R$ 19,00/mês via Pix), digite *PIX*.\n` +
+                `• Para parar de receber mensagens a qualquer momento, digite *PARAR*.\n\n` +
+                `_Nosso atendimento humano já foi notificado e responderá em instantes se precisar de ajuda adicional!_`
+            });
+            continue;
+          }
+
+          // 5. Se a pessoa enviou um currículo em PDF / Word no WhatsApp:
+          if (docMsg) {
+            const fileName = docMsg.fileName || 'Currículo.pdf';
+            const replyResume =
+              `🤖 *SUGESTÕES DE MELHORIA PARA SEU CURRÍCULO* 📄\n\n` +
+              `Olá, *${userName}*! Recebi o seu arquivo *${fileName}* com foco em *${userArea}*.\n\n` +
+              `✅ *PASSO 1: Sugestão de Resumo Profissional para colocar no topo do currículo:*\n` +
+              `_"Profissional com foco em ${userArea}, facilidade de aprendizado, comunicação clara, organização de rotinas, atendimento e domínio de ferramentas digitais. Disponibilidade para início e foco em resultados."_\n\n` +
+              `🔑 *PASSO 2: Palavras-Chave Recomendadas para a seção de Habilidades:*\n` +
+              `• ${userArea} • Comunicação • Pacote Office / Ferramentas Digitais • Gestão do Tempo • Resolução de Problemas • Atendimento • Organização de Processos • Trabalho em Equipe.\n\n` +
+              `⚠️ *PASSO 3: Dica de Formatação:*\n` +
+              `Prefira currículos em 1 coluna simples (Word ou Google Docs exportado em PDF), pois leitores automáticos de portais leem melhor textos lineares.\n\n` +
+              `💡 _Digite *SCRIPTS* se quiser modelos de mensagens para enviar a recrutadores, ou *PARAR* a qualquer momento para cancelar os alertas._`;
+
+            await waSock.sendMessage(senderJid, { text: replyResume });
+            continue;
+          }
+
+          // 6. Se a pessoa digitou SCRIPTS:
+          if (upper === 'SCRIPTS' || upper === 'SCRIPT') {
+            const replyScripts =
+              `🎯 *MODELOS DE MENSAGEM PARA CANDIDATURA (VAGAZAP IA)* 🎯\n\n` +
+              `Use estes modelos ao se candidatar nas vagas enviadas às 07h00:\n\n` +
+              `1️⃣ *Mensagem para abordar Recrutador no LinkedIn após se inscrever:*\n` +
+              `_"Olá [Nome], tudo bem? Acabei de realizar minha inscrição na vaga de *${userArea}* pela plataforma oficial e gostaria de me colocar à disposição por aqui também. Meu currículo está atualizado no perfil. Muito obrigado(a)!"_\n\n` +
+              `2️⃣ *Mensagem para enviar Currículo por E-mail ou WhatsApp:*\n` +
+              `_"Bom dia! Vi a oportunidade aberta para *${userArea}* e encaminho meu currículo em anexo para avaliação. Tenho disponibilidade e facilidade com rotinas da área. Fico à disposição!"_\n\n` +
+              `3️⃣ *Mensagem para Estágio / 1º Emprego:*\n` +
+              `_"Olá! Estou me candidatando à oportunidade de *${userArea}*. Tenho muita dedicação aos estudos na área, facilidade com tecnologia e vontade de aprender junto à equipe. Agradeço a atenção!"_`;
+
+            await waSock.sendMessage(senderJid, { text: replyScripts });
             continue;
           }
         } catch (err) {
@@ -214,7 +251,6 @@ async function sendWhatsAppMessage(phone, text) {
   if (!digits) return { ok: false, error: 'Número de telefone vazio' };
   if (!digits.startsWith('55')) digits = '55' + digits;
 
-  // Se o WhatsApp Nativo estiver conectado, usa ele imediatamente!
   if (waSock && waState.status === 'connected') {
     try {
       let targetJid = `${digits}@s.whatsapp.net`;
@@ -232,7 +268,6 @@ async function sendWhatsAppMessage(phone, text) {
     }
   }
 
-  // Fallback opcional para WAHA externo se configurado
   const wahaUrl = (process.env.WAHA_URL || '').replace(/\/$/, '');
   if (wahaUrl) {
     try {
@@ -254,151 +289,189 @@ async function sendWhatsAppMessage(phone, text) {
 }
 
 // ============================================================================
-// VAGAS CURADAS E MENSAGEM DO BOLETIM
+// BUSCA DE VAGAS ABERTAS NO DIA E PREVENÇÃO DE REPETIÇÃO ENTRE DIAS
 // ============================================================================
-const CURATED_JOBS = {
+const FALLBACK_ACTIVE_SEARCHES = {
   homeoffice: [
     {
-      title: 'Assistente de Relacionamento (Turno Noturno)',
-      company: 'Conexa Saúde',
-      modality: '100% Home Office (22h às 07h)',
-      match: '96%',
-      benefits: 'Cartão CAJU R$ 1.059/mês + Amil S450 + Odonto 100% + Farmácia R$ 100',
-      link: 'https://conexasaude.gupy.io/jobs/12081528?jobBoardSource=gupy_opportunities'
+      title: 'Atendimento ao Cliente & Suporte Digital (Remoto)',
+      company: 'Vagas Abertas • Filtro Recente',
+      modality: 'Home Office / Remoto',
+      benefits: 'CLT/PJ • Confira os requisitos e benefícios na página oficial da vaga',
+      link: 'https://www.linkedin.com/jobs/search?keywords=Atendimento%20Remoto&location=Brasil&f_TPR=r604800'
     },
     {
-      title: 'Analista de Relacionamento Júnior',
-      company: 'Unicred do Brasil',
-      modality: '100% Home Office',
-      match: '95%',
-      benefits: 'Salário Cooperativa + VR/VA Alto + Bradesco Saúde Top + PLR',
-      link: 'https://unicred.gupy.io/'
+      title: 'Assistente Administrativo & Operações (Remoto)',
+      company: 'Vagas Abertas • Filtro Recente',
+      modality: 'Home Office / Remoto',
+      benefits: 'CLT/PJ • Confira os requisitos e benefícios na página oficial da vaga',
+      link: 'https://www.linkedin.com/jobs/search?keywords=Assistente%20Administrativo%20Remoto&location=Brasil&f_TPR=r604800'
     },
     {
-      title: 'Consultor de Relacionamento 100% Chat',
-      company: 'Concentrix',
-      modality: '100% Remoto (Escala 5x2 • 6h20/dia)',
-      match: '91%',
-      benefits: 'CLT + Equipamento enviado em casa + VR/VA + Assistência Médica',
-      link: 'https://www.infojobs.com.br/vagas-de-emprego-chat.aspx'
+      title: 'Analista de Relacionamento & Customer Success',
+      company: 'Vagas Abertas • Filtro Recente',
+      modality: 'Home Office / Remoto',
+      benefits: 'CLT/PJ • Confira os requisitos e benefícios na página oficial da vaga',
+      link: 'https://www.linkedin.com/jobs/search?keywords=Customer%20Success%20Remoto&location=Brasil&f_TPR=r604800'
     },
     {
-      title: 'SDR Outbound - Prospecção B2B',
-      company: 'Buzzmonitor',
-      modality: '100% Remoto',
-      match: '95%',
-      benefits: 'Salário Fixo + Comissões + VR/VA Flexível + Auxílio Home Office',
-      link: 'https://remotar.com.br'
+      title: 'Representante Comercial / SDR (Inside Sales)',
+      company: 'Vagas Abertas • Filtro Recente',
+      modality: 'Home Office / Remoto',
+      benefits: 'CLT/PJ • Confira os requisitos e benefícios na página oficial da vaga',
+      link: 'https://www.linkedin.com/jobs/search?keywords=SDR%20Remoto&location=Brasil&f_TPR=r604800'
+    },
+    {
+      title: 'Auxiliar de Backoffice & Suporte Operacional',
+      company: 'Vagas Abertas • Filtro Recente',
+      modality: 'Home Office / Remoto',
+      benefits: 'CLT/PJ • Confira os requisitos e benefícios na página oficial da vaga',
+      link: 'https://www.linkedin.com/jobs/search?keywords=Backoffice%20Remoto&location=Brasil&f_TPR=r604800'
     }
   ],
   estagio: [
     {
-      title: 'Estágio em Atendimento Digital & Customer Success',
-      company: 'Starian / Omie',
-      modality: '100% Home Office (6h/dia)',
-      match: '95%',
-      benefits: 'Bolsa R$ 1.600 + Cartão Caju/Flash + Notebook fornecido + Auxílio Internet',
-      link: 'https://starian.gupy.io/'
+      title: 'Estágio em Administração & Processos',
+      company: 'Vagas Abertas • Filtro Recente',
+      modality: '6h/dia • Estágio',
+      benefits: 'Bolsa Auxílio + Auxílio Transporte • Confira na página da vaga',
+      link: 'https://www.linkedin.com/jobs/search?keywords=Est%C3%A1gio%20Administra%C3%A7%C3%A3o&location=Brasil&f_TPR=r604800'
     },
     {
-      title: 'Estágio em Pré-Vendas & Negócios (SDR)',
-      company: 'Next Fit',
-      modality: '100% Remoto (6h/dia)',
-      match: '93%',
-      benefits: 'Bolsa Auxílio + Bônus por metas + Vale Refeição + Seguro de Vida',
-      link: 'https://nextfit.gupy.io/'
+      title: 'Estágio em Atendimento & Suporte ao Cliente',
+      company: 'Vagas Abertas • Filtro Recente',
+      modality: '6h/dia • Estágio',
+      benefits: 'Bolsa Auxílio + Auxílio Transporte • Confira na página da vaga',
+      link: 'https://www.linkedin.com/jobs/search?keywords=Est%C3%A1gio%20Atendimento&location=Brasil&f_TPR=r604800'
     },
     {
-      title: 'Estágio Administrativo & Relacionamento Financeiro',
-      company: 'Unicred',
-      modality: 'Remoto / Híbrido Flexível (6h/dia)',
-      match: '92%',
-      benefits: 'Bolsa Cooperativa + Auxílio Alimentação Alto + Gympass',
-      link: 'https://unicred.gupy.io/'
+      title: 'Estágio em Comercial, Marketing & Negócios',
+      company: 'Vagas Abertas • Filtro Recente',
+      modality: '6h/dia • Estágio',
+      benefits: 'Bolsa Auxílio + Auxílio Transporte • Confira na página da vaga',
+      link: 'https://www.linkedin.com/jobs/search?keywords=Est%C3%A1gio%20Comercial&location=Brasil&f_TPR=r604800'
+    },
+    {
+      title: 'Estágio em Tecnologia & Suporte de TI',
+      company: 'Vagas Abertas • Filtro Recente',
+      modality: '6h/dia • Estágio',
+      benefits: 'Bolsa Auxílio + Auxílio Transporte • Confira na página da vaga',
+      link: 'https://www.linkedin.com/jobs/search?keywords=Est%C3%A1gio%20TI&location=Brasil&f_TPR=r604800'
+    },
+    {
+      title: 'Estágio em Recursos Humanos & Psicologia',
+      company: 'Vagas Abertas • Filtro Recente',
+      modality: '6h/dia • Estágio',
+      benefits: 'Bolsa Auxílio + Auxílio Transporte • Confira na página da vaga',
+      link: 'https://www.linkedin.com/jobs/search?keywords=Est%C3%A1gio%20Psicologia%20RH&location=Brasil&f_TPR=r604800'
     }
   ],
   aprendiz: [
     {
-      title: 'Jovem Aprendiz Administrativo & Atendimento Digital',
-      company: 'Unicred / CIEE & Gupy',
-      modality: 'Jornada 4h a 6h/dia (Sem experiência)',
-      match: '97%',
-      benefits: 'Salário R$ 1.280 + VR/VA R$ 750 + Plano de Saúde + Capacitação',
-      link: 'https://unicred.gupy.io/'
+      title: 'Jovem Aprendiz Administrativo',
+      company: 'Vagas Abertas • Filtro Recente',
+      modality: '4h a 6h/dia • Primeiro Emprego',
+      benefits: 'Salário Aprendiz CLT + VT + VR/VA • Confira na página da vaga',
+      link: 'https://www.linkedin.com/jobs/search?keywords=Jovem%20Aprendiz%20Administrativo&location=Brasil&f_TPR=r604800'
     },
     {
-      title: 'Jovem Aprendiz Operações & Suporte Comercial',
-      company: 'Brasil TecPar',
-      modality: 'Remoto / Digital (Sem experiência)',
-      match: '94%',
-      benefits: 'Salário CLT Aprendiz + Vale Alimentação + Plano Odontológico + Seguro',
-      link: 'https://brasiltecpar.gupy.io/'
+      title: 'Jovem Aprendiz Atendimento & Recepção',
+      company: 'Vagas Abertas • Filtro Recente',
+      modality: '4h a 6h/dia • Primeiro Emprego',
+      benefits: 'Salário Aprendiz CLT + VT + VR/VA • Confira na página da vaga',
+      link: 'https://www.linkedin.com/jobs/search?keywords=Jovem%20Aprendiz%20Atendimento&location=Brasil&f_TPR=r604800'
     },
     {
-      title: 'Jovem Aprendiz Atendimento Chat & Backoffice',
-      company: 'Actionline / Espro',
-      modality: 'Meio Período (Manhã ou Tarde)',
-      match: '92%',
-      benefits: 'CLT + VR/VA + Treinamento remunerado do zero',
-      link: 'https://www.infojobs.com.br'
+      title: 'Jovem Aprendiz Operações & Logística',
+      company: 'Vagas Abertas • Filtro Recente',
+      modality: '4h a 6h/dia • Primeiro Emprego',
+      benefits: 'Salário Aprendiz CLT + VT + VR/VA • Confira na página da vaga',
+      link: 'https://www.linkedin.com/jobs/search?keywords=Jovem%20Aprendiz&location=Brasil&f_TPR=r604800'
+    },
+    {
+      title: 'Jovem Aprendiz Auxiliar de Escritório',
+      company: 'Vagas Abertas • Filtro Recente',
+      modality: '4h a 6h/dia • Primeiro Emprego',
+      benefits: 'Salário Aprendiz CLT + VT + VR/VA • Confira na página da vaga',
+      link: 'https://www.linkedin.com/jobs/search?keywords=Aprendiz%20Auxiliar&location=Brasil&f_TPR=r604800'
+    },
+    {
+      title: 'Jovem Aprendiz Suporte Comercial',
+      company: 'Vagas Abertas • Filtro Recente',
+      modality: '4h a 6h/dia • Primeiro Emprego',
+      benefits: 'Salário Aprendiz CLT + VT + VR/VA • Confira na página da vaga',
+      link: 'https://www.linkedin.com/jobs/search?keywords=Jovem%20Aprendiz%20Comercial&location=Brasil&f_TPR=r604800'
     }
   ]
 };
 
-// Varredura em Tempo Real de Vagas Abertas (Retorna o Link Direto da Vaga Específica)
-async function scrapeLiveJobs({ profile = 'homeoffice', role = '', city = '', mode = '' }) {
+// Varredura em Tempo Real de Vagas Abertas (Filtra vagas recentes e evita repetidas)
+async function scrapeLiveJobs({ profile = 'homeoffice', role = '', city = '', mode = '', excludeLinks = [] }) {
   try {
     const withoutBrackets = String(role || 'Administrativo').replace(/\[[^\]]*\]/g, '').trim();
-    const cleanRole = (withoutBrackets || 'Administrativo').split(',')[0].split('/')[0].trim();
+    const cleanRole = (withoutBrackets || 'Administrativo').split(',')[0].split('/')[0].replace(/&/g, '').replace(/\s+/g, ' ').trim();
+    const isHome = !city || city === 'Remoto Nacional' || city.includes('Home Office') || mode.includes('Home Office');
     let keywordPrefix = '';
     if (profile === 'estagio') keywordPrefix = 'Estágio ';
     else if (profile === 'aprendiz') keywordPrefix = 'Jovem Aprendiz ';
-    else if (!city || city === 'Remoto Nacional' || mode.includes('100% Home Office')) keywordPrefix = 'Remoto ';
+    else if (isHome) keywordPrefix = 'Remoto ';
 
     const keywords = `${keywordPrefix}${cleanRole}`.trim();
-    const location = (city && city !== 'Remoto Nacional') ? city : 'Brasil';
+    const location = isHome ? 'Brasil' : city;
 
-    const searchUrl = `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=${encodeURIComponent(keywords)}&location=${encodeURIComponent(location)}&start=0`;
-    const resp = await fetch(searchUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      }
-    });
-    if (!resp.ok) return [];
+    // f_TPR=r604800 traz apenas vagas abertas/publicadas recentemente para evitar vagas antigas/encerradas
+    const urlsToTry = [
+      `https://br.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=${encodeURIComponent(keywords)}&location=${encodeURIComponent(location)}&f_TPR=r604800&start=0`,
+      `https://br.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=${encodeURIComponent(keywords)}&location=${encodeURIComponent(location)}&start=0`
+    ];
 
-    const html = await resp.text();
-    const blocks = html.split('<li');
     const results = [];
+    const seenLinks = new Set(excludeLinks || []);
 
-    for (const block of blocks) {
-      const titleMatch = block.match(/base-search-card__title[^>]*>([\s\S]*?)<\/h3>/);
-      const companyMatch = block.match(/base-search-card__subtitle[^>]*>([\s\S]*?)<\/h4>/);
-      const locMatch = block.match(/job-search-card__location[^>]*>([\s\S]*?)<\/span>/);
-      const linkMatch = block.match(/href="(https:\/\/[a-z]{2}\.linkedin\.com\/jobs\/view\/[^"?]+)/);
-
-      if (titleMatch && linkMatch) {
-        const title = titleMatch[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-        const company = companyMatch ? companyMatch[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() : 'Empresa Verificada';
-        const jobLoc = locMatch ? locMatch[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() : location;
-        const directLink = linkMatch[1];
-
-        let benefitsText = 'Pacote CLT/PJ + Vale Refeição/Alimentação + Assistência Médica';
-        if (profile === 'estagio') {
-          benefitsText = 'Bolsa Auxílio Compatível + Auxílio Transporte/Home Office + Seguro de Vida + Recesso Remunerado';
-        } else if (profile === 'aprendiz') {
-          benefitsText = 'Salário Aprendiz CLT + Vale Transporte + Vale Refeição/Alimentação + Capacitação Teórica';
-        }
-
-        results.push({
-          title,
-          company,
-          modality: jobLoc,
-          match: `${96 - Math.min(results.length * 2, 8)}%`,
-          benefits: benefitsText,
-          link: directLink
-        });
-      }
+    for (const searchUrl of urlsToTry) {
       if (results.length >= 5) break;
+      const resp = await fetch(searchUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      });
+      if (!resp.ok) continue;
+
+      const html = await resp.text();
+      const blocks = html.split('<li');
+
+      for (const block of blocks) {
+        const linkMatch = block.match(/href="(https:\/\/[^"?]*linkedin\.com\/jobs\/view\/[^"?]+)/);
+        const titleMatch = block.match(/<span class="sr-only">\s*([\s\S]*?)\s*<\/span>/) || block.match(/base-search-card__title[^>]*>([\s\S]*?)<\/h3>/);
+        const companyMatch = block.match(/base-search-card__subtitle[^>]*>([\s\S]*?)<\/h4>/);
+        const locMatch = block.match(/job-search-card__location[^>]*>([\s\S]*?)<\/span>/);
+
+        if (titleMatch && linkMatch) {
+          const directLink = linkMatch[1];
+          if (seenLinks.has(directLink)) continue;
+          seenLinks.add(directLink);
+
+          const title = titleMatch[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+          const company = companyMatch ? companyMatch[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() : 'Empresa Verificada';
+          const jobLoc = locMatch ? locMatch[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() : location;
+
+          let benefitsText = 'Vaga aberta verificada hoje • Candidatura direta no link oficial';
+          if (profile === 'estagio') {
+            benefitsText = 'Modalidade Estágio • Bolsa Auxílio e requisitos na página oficial';
+          } else if (profile === 'aprendiz') {
+            benefitsText = 'Modalidade Jovem Aprendiz • Requisitos e benefícios na página oficial';
+          }
+
+          results.push({
+            title,
+            company,
+            modality: jobLoc,
+            benefits: benefitsText,
+            link: directLink
+          });
+        }
+        if (results.length >= 5) break;
+      }
     }
 
     return results;
@@ -408,6 +481,7 @@ async function scrapeLiveJobs({ profile = 'homeoffice', role = '', city = '', mo
   }
 }
 
+// Monta a mensagem com 5 vagas abertas e atualiza o histórico do assinante para não repetir vagas amanhã
 async function buildWelcomeWhatsAppMessage(sub) {
   const profileNames = {
     homeoffice: 'Vagas CLT / PJ',
@@ -415,7 +489,6 @@ async function buildWelcomeWhatsAppMessage(sub) {
     aprendiz: 'Jovem Aprendiz / 1º Emprego'
   };
 
-  // Extrai cargo e cidade de sub.area (Ex: "Psicologia | Local: Apenas Presencial (Salvador-BA)")
   let rolePart = sub.area || '';
   let cityPart = '';
   if (rolePart.includes('| Local:')) {
@@ -428,61 +501,140 @@ async function buildWelcomeWhatsAppMessage(sub) {
     }
   }
 
+  const previousLinks = Array.isArray(sub.sentJobLinks) ? sub.sentJobLinks : [];
+
   let jobs = await scrapeLiveJobs({
     profile: sub.profile,
     role: rolePart,
     city: cityPart,
-    mode: sub.area || ''
+    mode: sub.area || '',
+    excludeLinks: previousLinks
   });
 
   if (!jobs || jobs.length === 0) {
-    jobs = CURATED_JOBS[sub.profile] || CURATED_JOBS.homeoffice;
+    jobs = (FALLBACK_ACTIVE_SEARCHES[sub.profile] || FALLBACK_ACTIVE_SEARCHES.homeoffice).slice(0, 5);
   } else {
-    jobs = jobs.slice(0, 4);
+    jobs = jobs.slice(0, 5);
+  }
+
+  // Salva os links enviados hoje no registro do assinante para não repetir amanhã
+  if (sub.id) {
+    const subs = readJson(SUBS_FILE, []);
+    const idx = subs.findIndex(s => s.id === sub.id);
+    if (idx !== -1) {
+      const updatedHistory = [...previousLinks, ...jobs.map(j => j.link)].slice(-50);
+      subs[idx].sentJobLinks = updatedHistory;
+      writeJson(SUBS_FILE, subs);
+    }
   }
 
   let msg = `⚡ *BEM-VINDO(A) AO VAGAZAP IA!* ⚡\n\n`;
-  msg += `Olá, *${sub.name || 'Assinante'}*! Seu acesso no *${sub.planName}* foi liberado com sucesso.\n`;
+  msg += `Olá, *${sub.name || 'Assinante'}*! Seu *${sub.planName || 'Teste Grátis de 3 Dias'}* está ativo.\n`;
   msg += `🎯 *Modalidade:* ${profileNames[sub.profile] || 'CLT / PJ'}\n`;
-  if (sub.area) msg += `📌 *Áreas & Local:* ${sub.area}\n`;
-  msg += `⏰ *Disparo Diário:* Todos os dias às *07:00 da manhã*.\n\n`;
+  if (sub.area) msg += `📌 *Filtro configurado:* ${sub.area}\n`;
+  msg += `⏰ *Entrega diária:* 5 vagas por dia às *07:00 da manhã*.\n`;
+  if (sub.expiresAt) msg += `📅 *Válido até:* ${sub.expiresAt}\n\n`;
   msg += `────────────────────\n`;
-  msg += `🔥 *SUAS VAGAS DE HOJE JÁ DESBLOQUEADAS:*\n\n`;
+  msg += `🔥 *SUAS 5 VAGAS ABERTAS DE HOJE:*\n\n`;
 
   jobs.forEach((j, idx) => {
     msg += `*${idx + 1}. ${j.title}*\n`;
     msg += `🏢 *Empresa:* ${j.company}\n`;
     msg += `📍 *Local/Formato:* ${j.modality}\n`;
-    msg += `🎯 *Compatibilidade:* ${j.match} com seu filtro\n`;
-    msg += `🎁 *Benefícios:* ${j.benefits}\n`;
-    msg += `🔗 *Link Direto da Vaga:* ${j.link}\n\n`;
+    msg += `📋 *Detalhes:* ${j.benefits}\n`;
+    msg += `🔗 *Link da Vaga:* ${j.link}\n\n`;
   });
 
-  if (sub.bump1 || sub.bump2) {
-    msg += `────────────────────\n`;
-    msg += `🎁 *SEUS BÔNUS VIP DESBLOQUEADOS:*\n`;
-    if (sub.bump1) {
-      msg += `✅ *Otimizador de Currículo Anti-Gupy (ATS):* Envie seu currículo em PDF aqui mesmo nesta conversa para nossa IA reescrever com palavras-chave de +90% de Match!\n`;
-    }
-    if (sub.bump2) {
-      msg += `✅ *Kit 15 Scripts para Abordar Recrutadores:* Digite *SCRIPTS* a qualquer momento para receber os textos prontos de abordagem no LinkedIn e WhatsApp.\n`;
-    }
-  }
+  msg += `────────────────────\n`;
+  msg += `💡 *Comandos úteis aqui no WhatsApp:*\n`;
+  msg += `• Envie seu *Currículo em PDF* aqui na conversa para receber sugestões de melhoria.\n`;
+  msg += `• Digite *SCRIPTS* para receber modelos de mensagem para recrutadores.\n`;
+  msg += `• Digite *SUPORTE* se precisar ajustar seu filtro ou tirar dúvidas.\n`;
+  msg += `• Digite *PARAR* a qualquer momento se quiser cancelar o recebimento.`;
 
-  msg += `\n💡 _Você economizou hoje 2h15m de buscas manuais._`;
   return msg;
 }
 
-// Sincroniza novo assinante com a aba 'Assinantes' no Google Sheets
+// ============================================================================
+// FLUXO FECHADO DE COBRANÇA PIX (R$ 19,00/MÊS) NO WHATSAPP (PÁGINA 3 AUDITORIA)
+// ============================================================================
+async function buildTrialEndPixMessage(sub) {
+  const amount = 19.00;
+  const pixKeyFallback = process.env.PIX_KEY || 'vagazap@senamidias.com.br';
+  let pixCode = '';
+
+  const mpToken = (process.env.MP_ACCESS_TOKEN || '').trim();
+  if (mpToken) {
+    try {
+      const mpResp = await fetch('https://api.mercadopago.com/v1/payments', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${mpToken}`,
+          'Content-Type': 'application/json',
+          'X-Idempotency-Key': crypto.randomUUID()
+        },
+        body: JSON.stringify({
+          transaction_amount: amount,
+          description: `VagaZap IA - Assinatura Mensal (30 Dias)`,
+          payment_method_id: 'pix',
+          payer: {
+            email: 'assinante@vagazap.com.br',
+            first_name: sub?.name || 'Assinante'
+          }
+        })
+      });
+      if (mpResp.ok) {
+        const mpData = await mpResp.json();
+        pixCode = mpData.point_of_interaction?.transaction_data?.qr_code || '';
+        const payments = readJson(PAYMENTS_FILE, {});
+        payments[String(mpData.id)] = {
+          id: String(mpData.id),
+          mode: 'mercadopago',
+          status: 'pending',
+          amount,
+          name: sub?.name || 'Assinante VagaZap',
+          whatsapp: sub?.whatsapp || '',
+          profile: sub?.profile || 'homeoffice',
+          area: sub?.area || 'Geral',
+          plan: 'mensal',
+          createdAt: new Date().toISOString()
+        };
+        writeJson(PAYMENTS_FILE, payments);
+      }
+    } catch {}
+  }
+
+  let msg = `⏰ *SEU TESTE GRÁTIS DE 3 DIAS ENCERRA HOJE* ⚡\n\n`;
+  msg += `Olá, *${sub?.name || 'Candidato(a)'}*! Esperamos que você tenha gostado de receber as vagas filtradas às 07h00 no seu WhatsApp.\n\n`;
+  msg += `Para continuar recebendo *5 vagas abertas todos os dias às 07h00* pelos próximos 30 dias:\n`;
+  msg += `• *Valor:* R$ 19,00 por mês via Pix (sem fidelidade)\n`;
+  msg += `• *O que está incluído:* 5 vagas diárias no seu filtro + análise de currículo PDF + suporte no WhatsApp.\n\n`;
+
+  if (pixCode) {
+    msg += `💠 *PIX COPIA E COLA (R$ 19,00):*\n`;
+    msg += `${pixCode}\n\n`;
+  } else {
+    msg += `💠 *CHAVE PIX OFICIAL (R$ 19,00):*\n`;
+    msg += `👉 *${pixKeyFallback}*\n`;
+    msg += `_(Favorecido: Sena Mídias / Cristiano Sena da Costa)_\n\n`;
+  }
+
+  msg += `✅ *Como ativar sua assinatura:*\n`;
+  msg += `Após realizar o Pix de R$ 19,00, envie o *comprovante* aqui mesmo nesta conversa. Confirmamos e liberamos seus 30 dias em até 15 minutos!\n\n`;
+  msg += `_Se não quiser continuar, não precisa fazer nada: o envio será encerrado sem nenhum custo. Para sair agora, digite PARAR._`;
+
+  return msg;
+}
+
+// Sincroniza novo assinante com a aba 'Assinantes' no Google Sheets (Incluindo UTMs da campanha)
 function appendSubscriberToGoogleSheets(sub) {
   const spreadsheetId = process.env.SPREADSHEET_ID || '1CC_Lwd_6dH8BSYyKgavoYwagG_OHyr35uDbcwphg97Y';
   const gsheetsCmd = process.env.GSHEETS_CMD || 'C:\\Users\\t\\.gemini\\config\\plugins\\gsheets\\skills\\gsheets\\scripts\\gsheets.cmd';
 
   const tempBatchFile = path.join(DATA_DIR, `sheet_sub_${Date.now()}.json`);
-  const bumpsText = [
-    sub.bump1 ? 'Currículo IA Anti-Gupy' : '',
-    sub.bump2 ? 'Scripts Recrutadores' : ''
-  ].filter(Boolean).join(' + ') || 'Nenhum';
+  const utmSummary = sub.utms
+    ? `${sub.utms.utm_source || 'direto'}${sub.utms.utm_campaign ? ' / ' + sub.utms.utm_campaign : ''}${sub.utms.utm_content ? ' / ' + sub.utms.utm_content : ''}`
+    : 'direto';
 
   const batchPayload = [
     {
@@ -496,9 +648,9 @@ function appendSubscriberToGoogleSheets(sub) {
           sub.profile,
           sub.area || 'Geral',
           sub.planName,
-          bumpsText,
+          utmSummary,
           `R$ ${Number(sub.amount).toFixed(2).replace('.', ',')}`,
-          'ATIVO',
+          sub.status === 'active' ? 'ATIVO' : sub.status,
           sub.expiresAt
         ]
       ]
@@ -529,12 +681,14 @@ async function activateSubscriberFromPayment(paymentId, customDays = null) {
 
   const isTrial = Number(customDays) > 0;
   const days = isTrial ? Number(customDays) : (payment.plan === 'trimestral' ? 90 : 30);
+  const startDateStr = new Date().toLocaleDateString('pt-BR');
   const expDate = new Date(Date.now() + days * 86400000).toLocaleDateString('pt-BR');
 
   const newSub = {
     id: crypto.randomUUID(),
     paymentId,
     createdAt: new Date().toISOString(),
+    paidAt: isTrial ? null : startDateStr,
     name: payment.name,
     whatsapp: payment.whatsapp,
     profile: payment.profile,
@@ -542,13 +696,14 @@ async function activateSubscriberFromPayment(paymentId, customDays = null) {
     priority: payment.priority,
     plan: isTrial ? 'trial_3d' : payment.plan,
     planName: isTrial
-      ? `Teste VIP Convidado (${days} Dias)`
-      : (payment.plan === 'trimestral' ? 'Passe Headhunter VIP (90 Dias)' : 'Passe Radar (30 Dias)'),
-    bump1: !!payment.bump1,
-    bump2: !!payment.bump2,
-    amount: isTrial ? 0 : payment.amount,
+      ? `Teste Grátis (${days} Dias)`
+      : (payment.plan === 'trimestral' ? 'Plano Trimestral (90 Dias)' : 'Plano Mensal Pix (30 Dias)'),
+    bump1: true,
+    bump2: true,
+    amount: isTrial ? 0 : (payment.amount || 19.00),
     status: 'active',
-    expiresAt: expDate
+    expiresAt: expDate,
+    sentJobLinks: []
   };
 
   const subs = readJson(SUBS_FILE, []);
@@ -558,7 +713,14 @@ async function activateSubscriberFromPayment(paymentId, customDays = null) {
   appendSubscriberToGoogleSheets(newSub);
 
   const welcomeText = await buildWelcomeWhatsAppMessage(newSub);
-  const wahaResult = await sendWhatsAppMessage(newSub.whatsapp, welcomeText);
+  const confirmHeader = !isTrial
+    ? `✅ *PAGAMENTO CONFIRMADO — ASSINATURA ATIVA!* ✅\n` +
+      `• *Início:* ${startDateStr}\n` +
+      `• *Próximo vencimento:* ${expDate} (Avisaremos 2 dias antes. Tolerância de 2 dias após o vencimento).\n` +
+      `• *Cancelamento:* Sem fidelidade (digite PARAR quando quiser).\n\n`
+    : '';
+
+  const wahaResult = await sendWhatsAppMessage(newSub.whatsapp, confirmHeader + welcomeText);
   payment.wahaDispatch = wahaResult;
   writeJson(PAYMENTS_FILE, payments);
 
@@ -614,13 +776,11 @@ const server = http.createServer(async (req, res) => {
     return sendJson(res, 200, { ok: true });
   }
 
-  // CRIAR COBRANÇA PIX (MERCADO PAGO REAL OU MODO SIMULAÇÃO)
+  // CRIAR COBRANÇA PIX (R$ 19,00/MÊS)
   if (pathname === '/api/pix/create' && req.method === 'POST') {
     const body = await parseBody(req);
     const plan = body.plan === 'trimestral' ? 'trimestral' : 'mensal';
-    let amount = plan === 'trimestral' ? 49.90 : 19.90;
-    if (body.bump1) amount += 14.90;
-    if (body.bump2) amount += 9.90;
+    let amount = plan === 'trimestral' ? 49.00 : 19.00;
     amount = Number(amount.toFixed(2));
 
     const mpToken = (process.env.MP_ACCESS_TOKEN || '').trim();
@@ -637,7 +797,7 @@ const server = http.createServer(async (req, res) => {
           },
           body: JSON.stringify({
             transaction_amount: amount,
-            description: `VagaZap IA - ${plan === 'trimestral' ? '90 Dias' : '30 Dias'}`,
+            description: `VagaZap IA - ${plan === 'trimestral' ? '90 Dias' : '30 Dias (R$ 19/mês)'}`,
             payment_method_id: 'pix',
             payer: {
               email: body.email || 'cliente@vagazap.com.br',
@@ -666,8 +826,6 @@ const server = http.createServer(async (req, res) => {
           area: body.area || 'atendimento',
           priority: body.priority || 'beneficios',
           plan,
-          bump1: !!body.bump1,
-          bump2: !!body.bump2,
           qrCode,
           qrCodeBase64,
           createdAt: new Date().toISOString()
@@ -693,8 +851,6 @@ const server = http.createServer(async (req, res) => {
         area: body.area || 'atendimento',
         priority: body.priority || 'beneficios',
         plan,
-        bump1: !!body.bump1,
-        bump2: !!body.bump2,
         qrCode: fakePixCode,
         qrCodeBase64: '',
         createdAt: new Date().toISOString()
@@ -737,6 +893,51 @@ const server = http.createServer(async (req, res) => {
     const updated = await activateSubscriberFromPayment(body.paymentId, body.trialDays || null);
     if (!updated) return sendJson(res, 404, { error: 'Pagamento não encontrado' });
     return sendJson(res, 200, updated);
+  }
+
+  // PAINEL ADMIN: ATIVAR ASSINATURA PAGA DE R$ 19,00 (30 DIAS) PARA UM TESTADOR E NOTIFICAR NO WHATSAPP
+  if (pathname === '/api/admin/activate-paid' && req.method === 'POST') {
+    const body = await parseBody(req);
+    const subs = readJson(SUBS_FILE, []);
+    const sub = subs.find(s => s.id === body.subscriberId || s.whatsapp === body.whatsapp);
+    if (!sub) return sendJson(res, 404, { error: 'Assinante não encontrado' });
+
+    const startDateStr = new Date().toLocaleDateString('pt-BR');
+    const expDateStr = new Date(Date.now() + 30 * 86400000).toLocaleDateString('pt-BR');
+    sub.plan = 'mensal_19';
+    sub.planName = 'Assinatura Mensal Pix (R$ 19/mês)';
+    sub.amount = 19.00;
+    sub.paidAt = startDateStr;
+    sub.expiresAt = expDateStr;
+    sub.status = 'active';
+    writeJson(SUBS_FILE, subs);
+
+    appendSubscriberToGoogleSheets(sub);
+
+    const confirmMsg =
+      `✅ *PAGAMENTO CONFIRMADO — ASSINATURA ATIVA!* ⚡\n\n` +
+      `Olá, *${sub.name}*! Confirmamos seu pagamento de *R$ 19,00 via Pix*.\n\n` +
+      `📋 *Dados da sua assinatura:*\n` +
+      `• *Status:* Ativa (5 vagas por dia às 07h00)\n` +
+      `• *Data de início:* ${startDateStr}\n` +
+      `• *Próxima renovação:* ${expDateStr}\n` +
+      `• *Regra de renovação:* Enviaremos um lembrete 2 dias antes do vencimento (tolerância de 2 dias após o vencimento).\n` +
+      `• *Sem fidelidade:* Para cancelar a qualquer momento, basta responder *PARAR*.`;
+
+    const waRes = await sendWhatsAppMessage(sub.whatsapp, confirmMsg);
+    return sendJson(res, 200, { ok: true, subscriber: sub, waRes });
+  }
+
+  // PAINEL ADMIN: ENVIAR COBRANÇA DE FIM DE TESTE (R$ 19 PIX) NO WHATSAPP DE UM TESTADOR
+  if (pathname === '/api/admin/send-pix-offer' && req.method === 'POST') {
+    const body = await parseBody(req);
+    const subs = readJson(SUBS_FILE, []);
+    const sub = subs.find(s => s.id === body.subscriberId || s.whatsapp === body.whatsapp);
+    if (!sub) return sendJson(res, 404, { error: 'Assinante não encontrado' });
+
+    const pixMsg = await buildTrialEndPixMessage(sub);
+    const waRes = await sendWhatsAppMessage(sub.whatsapp, pixMsg);
+    return sendJson(res, 200, { ok: true, waRes });
   }
 
   // WEBHOOK OFICIAL DO MERCADO PAGO
@@ -804,10 +1005,11 @@ const server = http.createServer(async (req, res) => {
     return sendJson(res, 200, { jobs });
   }
 
-  // PAINEL ADMIN: CADASTRAR CONVIDADO VIP (TESTE 3 DIAS) E DISPARAR NO WHATSAPP
+  // CADASTRAR TESTE GRÁTIS DE 3 DIAS E DISPARAR NO WHATSAPP
   if (pathname === '/api/admin/test-waha' && req.method === 'POST') {
     const body = await parseBody(req);
-    const expDate = new Date(Date.now() + 3 * 86400000).toLocaleDateString('pt-BR');
+    const trialDays = Number(body.trialDays) || 3;
+    const expDate = new Date(Date.now() + trialDays * 86400000).toLocaleDateString('pt-BR');
     const areaCombined = body.area
       ? `${body.area}${body.city ? ` | Local: (${body.city})` : ''}`
       : 'Administrativo / Atendimento | Local: (Salvador - BA)';
@@ -821,12 +1023,15 @@ const server = http.createServer(async (req, res) => {
       profile: body.profile || 'homeoffice',
       area: areaCombined,
       plan: 'trial_3d',
-      planName: 'Teste VIP Convidado (3 Dias)',
+      planName: `Teste Grátis (${trialDays} Dias)`,
       bump1: true,
       bump2: true,
       amount: 0,
+      consent: !!body.consent,
+      utms: body.utms || { utm_source: 'direto' },
       status: 'active',
-      expiresAt: expDate
+      expiresAt: expDate,
+      sentJobLinks: []
     };
 
     if (body.saveTrial !== false) {
@@ -841,9 +1046,17 @@ const server = http.createServer(async (req, res) => {
     return sendJson(res, 200, { ...result, subscriber: sampleSub });
   }
 
-  // SERVIR ARQUIVOS ESTÁTICOS
+  // PAINEL ADMIN: DISPARAR BOLETIM MATINAL PARA TODOS OS ATIVOS AGORA
+  if (pathname === '/api/admin/broadcast-morning' && req.method === 'POST') {
+    const summary = await runMorningBroadcast();
+    return sendJson(res, 200, summary);
+  }
+
+  // SERVIR PÁGINAS E ARQUIVOS ESTÁTICOS (Incluindo /privacidade e /termos)
   let filePath = path.join(__dirname, 'public', pathname === '/' ? 'index.html' : pathname);
   if (pathname === '/admin') filePath = path.join(__dirname, 'public', 'admin.html');
+  if (pathname === '/privacidade') filePath = path.join(__dirname, 'public', 'privacidade.html');
+  if (pathname === '/termos') filePath = path.join(__dirname, 'public', 'termos.html');
 
   if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
     const ext = path.extname(filePath).toLowerCase();
@@ -851,7 +1064,9 @@ const server = http.createServer(async (req, res) => {
       '.html': 'text/html; charset=utf-8',
       '.js': 'application/javascript; charset=utf-8',
       '.css': 'text/css; charset=utf-8',
-      '.json': 'application/json; charset=utf-8'
+      '.json': 'application/json; charset=utf-8',
+      '.jpg': 'image/jpeg',
+      '.png': 'image/png'
     };
     res.writeHead(200, { 'Content-Type': mimeTypes[ext] || 'text/plain' });
     return res.end(fs.readFileSync(filePath));
@@ -860,6 +1075,66 @@ const server = http.createServer(async (req, res) => {
   res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
   res.end('Página não encontrada');
 });
+
+// Calcula quantos dias faltam para o vencimento (DD/MM/AAAA)
+function daysUntilExpiration(expiresAtStr) {
+  if (!expiresAtStr) return 999;
+  const parts = String(expiresAtStr).split('/');
+  if (parts.length !== 3) return 999;
+  const expDate = new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0]), 23, 59, 59);
+  const diffMs = expDate.getTime() - Date.now();
+  return Math.floor(diffMs / 86400000);
+}
+
+// Disparo Matinal Automático das 07h00 + Automação de Fim de Teste e Renovação (Página 3 Auditoria)
+let lastBroadcastDate = '';
+async function runMorningBroadcast() {
+  const subs = readJson(SUBS_FILE, []);
+  let sentCount = 0;
+  let expiredCount = 0;
+
+  for (const sub of subs) {
+    if (sub.status !== 'active') continue;
+
+    const daysLeft = daysUntilExpiration(sub.expiresAt);
+
+    // Se já passou da tolerância (vencido):
+    // - Para teste grátis (trial_3d): encerra no dia seguinte ao vencimento e envia a oferta de R$ 19/mês via Pix
+    // - Para assinante mensal (mensal_19): tolerância de 2 dias após o vencimento
+    const toleranceDays = sub.plan === 'trial_3d' ? -1 : -3;
+    if (daysLeft <= toleranceDays) {
+      sub.status = 'expired';
+      expiredCount++;
+      const pixOfferMsg = await buildTrialEndPixMessage(sub);
+      await sendWhatsAppMessage(sub.whatsapp, pixOfferMsg);
+      await new Promise(r => setTimeout(r, 2000));
+      continue;
+    }
+
+    // Dispara o boletim matinal de 5 vagas abertas sem repetir as de ontem
+    const msg = await buildWelcomeWhatsAppMessage(sub);
+    let morningMsg = msg.replace(
+      '⚡ *BEM-VINDO(A) AO VAGAZAP IA!* ⚡',
+      `☀️ *BOM DIA, ${(sub.name || 'ASSINANTE').toUpperCase()}! SUAS 5 VAGAS DAS 07H00* ⚡`
+    );
+
+    // Se é o último dia do teste (daysLeft === 0) ou faltam 2 dias para renovar assinatura paga, adiciona aviso no final
+    if (sub.plan === 'trial_3d' && daysLeft === 0) {
+      const pixOffer = await buildTrialEndPixMessage(sub);
+      morningMsg += `\n\n────────────────────\n${pixOffer}`;
+    } else if (sub.plan !== 'trial_3d' && (daysLeft === 2 || daysLeft === 0)) {
+      morningMsg += `\n\n🔔 *Aviso de Renovação:* Sua assinatura mensal vence em *${sub.expiresAt}*. Para renovar por mais 30 dias (R$ 19,00 via Pix), digite *PIX* aqui na conversa.`;
+    }
+
+    await sendWhatsAppMessage(sub.whatsapp, morningMsg);
+    sentCount++;
+    await new Promise(r => setTimeout(r, 2000));
+  }
+
+  writeJson(SUBS_FILE, subs);
+  console.log(`[Disparo Matinal 07h00] Enviados: ${sentCount} | Encerrados/Cobrados: ${expiredCount}`);
+  return { ok: true, sentCount, expiredCount };
+}
 
 server.listen(PORT, () => {
   console.log(`====================================================`);
@@ -873,4 +1148,16 @@ server.listen(PORT, () => {
   setInterval(() => {
     fetch(`${renderUrl}/api/whatsapp/status`).catch(() => {});
   }, 10 * 60 * 1000);
+
+  // Relógio Interno: Verifica a cada 60 segundos se são 07:00 da manhã (Horário de Brasília)
+  setInterval(() => {
+    try {
+      const nowBr = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' }));
+      const dateKey = nowBr.toISOString().slice(0, 10);
+      if (nowBr.getHours() === 7 && nowBr.getMinutes() === 0 && lastBroadcastDate !== dateKey) {
+        lastBroadcastDate = dateKey;
+        runMorningBroadcast().catch(err => console.error('[Erro Cron 07h00]:', err.message));
+      }
+    } catch {}
+  }, 60 * 1000);
 });
