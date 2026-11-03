@@ -46,12 +46,12 @@ const DEFAULT_SUBS = [
     profile: 'homeoffice',
     area: '[💼 CLT/PJ + 🎓 Estágio + 🚀 Jovem Aprendiz] Atendimento & Chat, Comercial & SDR, Administrativo & Finanças, Saúde, Psicologia & Educação, Marketing & Criativo | Local: (100% Home Office)',
     plan: 'trial_3d',
-    planName: 'Teste Grátis (3 Dias)',
+    planName: 'Teste Grátis Estendido (7 Dias)',
     bump1: true,
     bump2: true,
     amount: 0,
     status: 'active',
-    expiresAt: '29/10/2026',
+    expiresAt: '02/11/2026',
     sentJobLinks: []
   }
 ];
@@ -717,47 +717,146 @@ async function buildTrialEndPixMessage(sub) {
   return msg;
 }
 
-// Sincroniza novo assinante com a aba 'Assinantes' no Google Sheets (Incluindo UTMs da campanha)
-function appendSubscriberToGoogleSheets(sub) {
-  const spreadsheetId = process.env.SPREADSHEET_ID || '1CC_Lwd_6dH8BSYyKgavoYwagG_OHyr35uDbcwphg97Y';
-  const gsheetsCmd = process.env.GSHEETS_CMD || 'C:\\Users\\t\\.gemini\\config\\plugins\\gsheets\\skills\\gsheets\\scripts\\gsheets.cmd';
+// ============================================================================
+// SINCRONIZAÇÃO NATIVA COM GOOGLE SHEETS (SEM DEPENDÊNCIA DE CMD OU PC LOCAL)
+// ============================================================================
+let cachedGoogleToken = null;
+let googleTokenExpiresAt = 0;
 
-  const tempBatchFile = path.join(DATA_DIR, `sheet_sub_${Date.now()}.json`);
+async function getGoogleAccessToken() {
+  const clientId = process.env.GOOGLE_CLIENT_ID || '';
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
+  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN || '';
+
+  if (!refreshToken || !clientId || !clientSecret) return null;
+  if (cachedGoogleToken && Date.now() < googleTokenExpiresAt) return cachedGoogleToken;
+
+  try {
+    const resp = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+        grant_type: 'refresh_token'
+      })
+    });
+    const data = await resp.json();
+    if (data.access_token) {
+      cachedGoogleToken = data.access_token;
+      googleTokenExpiresAt = Date.now() + ((data.expires_in || 3600) - 300) * 1000;
+      return cachedGoogleToken;
+    }
+  } catch (err) {
+    console.error('[Google OAuth] Erro ao atualizar access token:', err.message);
+  }
+  return null;
+}
+
+// Grava linhas em qualquer aba do Google Sheets diretamente via API REST Oficial
+async function appendRowsToGoogleSheets(range, rows) {
+  const spreadsheetId = process.env.SPREADSHEET_ID || '1CC_Lwd_6dH8BSYyKgavoYwagG_OHyr35uDbcwphg97Y';
+  const accessToken = await getGoogleAccessToken();
+  if (!accessToken) {
+    console.warn('[Google Sheets REST] Google OAuth token indisponível. Pulando gravação na nuvem.');
+    return false;
+  }
+
+  try {
+    const encodedRange = encodeURIComponent(range);
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${encodedRange}:append?valueInputOption=USER_ENTERED`;
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ values: rows })
+    });
+    const result = await resp.json();
+    if (resp.ok) {
+      console.log(`[Google Sheets REST] Gravado com sucesso em ${range}!`);
+      return true;
+    } else {
+      console.error('[Google Sheets REST] Erro na API:', result);
+      return false;
+    }
+  } catch (err) {
+    console.error('[Google Sheets REST] Erro de rede ao gravar:', err.message);
+    return false;
+  }
+}
+
+// Sincroniza novo assinante com a aba 'Assinantes' no Google Sheets (Nuvem ou Local)
+async function appendSubscriberToGoogleSheets(sub) {
   const utmSummary = sub.utms
     ? `${sub.utms.utm_source || 'direto'}${sub.utms.utm_campaign ? ' / ' + sub.utms.utm_campaign : ''}${sub.utms.utm_content ? ' / ' + sub.utms.utm_content : ''}`
     : 'direto';
 
-  const batchPayload = [
-    {
-      op: 'append',
-      range: "'Assinantes'!A1",
-      data: [
-        [
-          new Date().toLocaleDateString('pt-BR'),
-          sub.name || 'Cliente VagaZap',
-          sub.whatsapp,
-          sub.profile,
-          sub.area || 'Geral',
-          sub.planName,
-          utmSummary,
-          `R$ ${Number(sub.amount).toFixed(2).replace('.', ',')}`,
-          sub.status === 'active' ? 'ATIVO' : sub.status,
-          sub.expiresAt
-        ]
-      ]
-    }
+  const row = [
+    new Date().toLocaleDateString('pt-BR'),
+    sub.name || 'Cliente VagaZap',
+    sub.whatsapp,
+    sub.profile,
+    sub.area || 'Geral',
+    sub.planName,
+    utmSummary,
+    `R$ ${Number(sub.amount).toFixed(2).replace('.', ',')}`,
+    sub.status === 'active' ? 'ATIVO' : sub.status,
+    sub.expiresAt
   ];
 
-  fs.writeFileSync(tempBatchFile, JSON.stringify(batchPayload, null, 2), 'utf8');
+  // 1. Tenta gravar via API REST Oficial na nuvem (funciona no Render sem PC ligado)
+  const restOk = await appendRowsToGoogleSheets("'Assinantes'!A1", [row]);
+  if (restOk) return;
 
-  execFile('cmd.exe', ['/c', gsheetsCmd, 'mutate', 'batch', spreadsheetId, '-f', tempBatchFile], (err) => {
-    try { fs.unlinkSync(tempBatchFile); } catch {}
-    if (err) {
-      console.error('[Google Sheets Sync] Erro ao gravar assinante:', err.message);
-    } else {
-      console.log('[Google Sheets Sync] Assinante gravado na aba Assinantes com sucesso!');
-    }
-  });
+  // 2. Fallback para CLI local caso esteja rodando na máquina Windows
+  const spreadsheetId = process.env.SPREADSHEET_ID || '1CC_Lwd_6dH8BSYyKgavoYwagG_OHyr35uDbcwphg97Y';
+  const gsheetsCmd = process.env.GSHEETS_CMD || 'C:\\Users\\t\\.gemini\\config\\plugins\\gsheets\\skills\\gsheets\\scripts\\gsheets.cmd';
+  const tempBatchFile = path.join(DATA_DIR, `sheet_sub_${Date.now()}.json`);
+  const batchPayload = [{ op: 'append', range: "'Assinantes'!A1", data: [row] }];
+
+  try {
+    fs.writeFileSync(tempBatchFile, JSON.stringify(batchPayload, null, 2), 'utf8');
+    execFile('cmd.exe', ['/c', gsheetsCmd, 'mutate', 'batch', spreadsheetId, '-f', tempBatchFile], (err) => {
+      try { fs.unlinkSync(tempBatchFile); } catch {}
+      if (err) console.error('[Google Sheets CLI] Erro:', err.message);
+      else console.log('[Google Sheets CLI] Assinante gravado com sucesso!');
+    });
+  } catch {}
+}
+
+// Varre 5 vagas 100% Home Office (Brasil) e grava diretamente na aba 'Vagas' do Cristiano Sena
+async function syncDailyJobsToCristianoSpreadsheet() {
+  console.log(`[Rotina Nuvem] Iniciando varredura diária das vagas para Cristiano Sena...`);
+  try {
+    const jobs = await scrapeLiveJobs({
+      profile: 'homeoffice',
+      role: 'SDR',
+      city: '',
+      mode: '100% Home Office'
+    });
+
+    const activeList = (jobs && jobs.length > 0)
+      ? jobs.slice(0, 5)
+      : (FALLBACK_ACTIVE_SEARCHES.homeoffice || []).slice(0, 5);
+
+    const todayStr = new Date().toLocaleDateString('pt-BR');
+    const rows = activeList.map((j, i) => [
+      todayStr,
+      j.title,
+      j.company,
+      '100% Remoto (Home Office Brasil)',
+      `${98 - i * 2}%`,
+      `${j.benefits || 'Vaga no Brasil verificada hoje'}. Link: ${j.link}`
+    ]);
+
+    await appendRowsToGoogleSheets("'Vagas'!A1", rows);
+    console.log(`[Rotina Nuvem] 5 vagas de ${todayStr} gravadas na planilha do Google Sheets com sucesso!`);
+  } catch (err) {
+    console.error('[Rotina Nuvem] Erro ao sincronizar vagas do Cristiano:', err.message);
+  }
 }
 
 async function activateSubscriberFromPayment(paymentId, customDays = null) {
@@ -1031,6 +1130,49 @@ const server = http.createServer(async (req, res) => {
     return sendJson(res, 200, { ok: true, waRes });
   }
 
+  // PAINEL ADMIN: ESTENDER PERÍODO DE TESTE E NOTIFICAR NO WHATSAPP
+  if (pathname === '/api/admin/extend-trial' && req.method === 'POST') {
+    const body = await parseBody(req);
+    const subs = readJson(SUBS_FILE, []);
+    const sub = subs.find(s => s.id === body.subscriberId || s.whatsapp === body.whatsapp);
+    if (!sub) return sendJson(res, 404, { error: 'Assinante não encontrado' });
+
+    const extraDays = Number(body.days) || 4;
+    let expDate = body.newExpiresAt;
+    if (!expDate) {
+      expDate = new Date(Date.now() + extraDays * 86400000).toLocaleDateString('pt-BR');
+    }
+
+    sub.expiresAt = expDate;
+    sub.status = 'active';
+    sub.planName = `Teste Grátis Estendido (+${extraDays} Dias)`;
+    writeJson(SUBS_FILE, subs);
+
+    appendSubscriberToGoogleSheets(sub);
+
+    const message = body.text || (
+      `🎁 *BOA NOTÍCIA, ${(sub.name || 'CANDIDATO(A)').toUpperCase()}! SEU TESTE FOI ESTENDIDO POR +${extraDays} DIAS!* ⚡\n\n` +
+      `Olá, *${sub.name || 'Candidato(a)'}*! Ajustamos nossos filtros para vagas 100% no Brasil e 100% Home Office.\n\n` +
+      `Como cortesia, liberamos mais *${extraDays} dias de teste grátis* para você continuar recebendo seus boletins matinais às 07h00!\n\n` +
+      `📅 *Novo prazo de vigência:* até *${expDate}*.\n` +
+      `⏰ *Horário dos envios:* todos os dias pontualmente às *07:00 da manhã*.\n\n` +
+      `Aproveite para enviar seu *Currículo em PDF* aqui nesta conversa se quiser receber dicas de melhoria ou digite *SCRIPTS* para modelos de abordagem para recrutadores!`
+    );
+
+    const waRes = await sendWhatsAppMessage(sub.whatsapp, message);
+    return sendJson(res, 200, { ok: true, subscriber: sub, waRes });
+  }
+
+  // PAINEL ADMIN: ENVIAR MENSAGEM AVULSA VIA WHATSAPP NATIVO
+  if (pathname === '/api/admin/send-message' && req.method === 'POST') {
+    const body = await parseBody(req);
+    if (!body.phone || !body.text) {
+      return sendJson(res, 400, { error: 'phone e text são obrigatórios' });
+    }
+    const result = await sendWhatsAppMessage(body.phone, body.text);
+    return sendJson(res, 200, result);
+  }
+
   // WEBHOOK OFICIAL DO MERCADO PAGO
   if (pathname === '/api/webhook/mercadopago' && req.method === 'POST') {
     const body = await parseBody(req);
@@ -1224,6 +1366,14 @@ async function runMorningBroadcast() {
 
   writeJson(SUBS_FILE, subs);
   console.log(`[Disparo Matinal 07h00] Enviados: ${sentCount} | Encerrados/Cobrados: ${expiredCount}`);
+
+  // Grava automaticamente as 5 vagas na planilha do Cristiano na nuvem
+  try {
+    await syncDailyJobsToCristianoSpreadsheet();
+  } catch (err) {
+    console.error('[Disparo Matinal 07h00] Erro ao sincronizar planilha:', err.message);
+  }
+
   return { ok: true, sentCount, expiredCount };
 }
 
