@@ -36,25 +36,7 @@ const WA_AUTH_DIR = path.join(DATA_DIR, 'wa_auth');
 const SUBS_FILE = path.join(DATA_DIR, 'subscribers.json');
 const PAYMENTS_FILE = path.join(DATA_DIR, 'payments.json');
 
-const DEFAULT_SUBS = [
-  {
-    id: '88918f6e-9fc9-4b7d-8545-ce393223b847',
-    paymentId: 'trial_1793031584578',
-    createdAt: '2026-10-26T16:19:44.578Z',
-    name: 'Maria Rafaela',
-    whatsapp: '71988382214',
-    profile: 'homeoffice',
-    area: '[💼 CLT/PJ + 🎓 Estágio + 🚀 Jovem Aprendiz] Atendimento & Chat, Comercial & SDR, Administrativo & Finanças, Saúde, Psicologia & Educação, Marketing & Criativo | Local: (100% Home Office)',
-    plan: 'trial_3d',
-    planName: 'Teste Grátis Estendido (7 Dias)',
-    bump1: true,
-    bump2: true,
-    amount: 0,
-    status: 'active',
-    expiresAt: '02/11/2026',
-    sentJobLinks: []
-  }
-];
+const DEFAULT_SUBS = [];
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(SUBS_FILE)) fs.writeFileSync(SUBS_FILE, JSON.stringify(DEFAULT_SUBS, null, 2));
@@ -1171,6 +1153,27 @@ const server = http.createServer(async (req, res) => {
     }
     const result = await sendWhatsAppMessage(body.phone, body.text);
     return sendJson(res, 200, result);
+  }
+
+  // PAINEL ADMIN: CANCELAR/EXCLUIR ASSINANTE (IMPEDE DISPAROS FUTUROS)
+  if (pathname === '/api/admin/remove-subscriber' && req.method === 'POST') {
+    const body = await parseBody(req);
+    let subs = readJson(SUBS_FILE, []);
+    const targetPhone = String(body.whatsapp || '').replace(/\D/g, '');
+    const targetId = body.subscriberId;
+
+    let modified = false;
+    subs = subs.map(s => {
+      const sPhone = String(s.whatsapp || '').replace(/\D/g, '');
+      if ((targetId && s.id === targetId) || (targetPhone && sPhone.endsWith(targetPhone.slice(-8)))) {
+        s.status = 'canceled';
+        modified = true;
+      }
+      return s;
+    });
+
+    writeJson(SUBS_FILE, subs);
+    return sendJson(res, 200, { ok: true, modified, subscribers: subs });
   }
 
   // WEBHOOK OFICIAL DO MERCADO PAGO
